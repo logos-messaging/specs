@@ -12,23 +12,29 @@ contributors:
 
 ## Background / Rationale / Motivation
 
+Application developers use chat protocols to send payloads between clients. However not all payloads sent over a protocol are intended to be read by the end users. In normal operation a chat protocol needs to notify the chat clients of event changes in order to keep all clients synchronized. With a finite set of message types, its possible to explicitly label each type as "content" or "meta-message" and route the payload appropriately. In an evolving decentralized chat protocol, this is not alway possible. When a client receives a payload it does not understand, there exists an ambiguity of whether this message contains a payload intended for the application, or a protocol message type which it does not understand. This ambiguity makes versioning between clients difficult. 
 
+Furthermore as applications communicating with each other cannot be guaranteed to be compatible, its possible that applications can also receive messages and be uncertain as how to parse incoming messages.
+
+Having a mechanism that removes the ambiguity of how to handle payloads intended for end users is beneficial for both clients and applications.
 
 ## Theory / Semantics
 
 ### Definitions
 
-- **Type:** A data structure used to store data
-- **ContentType:** A `type` used specifically encode data intended for applications
+This document makes use of the shared terminology defined in the [CHATDEFS]() protocol.
+
+[Payload, Application, client]
 
 ### ContentFrame
 
-A ContentFrame is used to distinguish the application level content, from payloads intended to modify protocol state -- while also providing the necessary context to properly decode it.
+A ContentFrame is used to describe messages intended to be consumed by applications/end users. 
 
-This specification provide:
-- a structured approach to enable inter-operation of content types between applications.
-- Flexible mechanism that allows permissionless type definition by all developers.
+The presence of a ContentFrame removes ambiguity of who the handler of a given payload is, and its fields describe how to parse the attached payload. This decouples of the encoded data from the software that created it increasing protocol resilience.
 
+ContentFrames make no assumptions of the data contained, and defer to 
+
+- All payloads intended to be consumed by the application MUST be wrapped in a ContentFrame.
 
 ### Domain
 
@@ -39,16 +45,15 @@ A domain defines the authority which governs a set of content types. It cannot b
 
 To reduce payload size, Domains are mapped to an integer `domain_id`. The mappings can be found [here](#appendix-a-domains)
 
-- a domain_id MUST be an integer value in the range [0, 65,535]
+- a domain_id MUST be a positive integer value
 - a domain_id MUST correspond to a single unique domain
 
 ### Tag
 
-A tag uniquely defines a type within a domain. Domains 
-
+A tag uniquely defines a type within a domain. After parsing the Domain and the tag application developers have all the data required to process the payload. Each domain is responsible for managing its tags and providing documentation to developers on how the corresponding types are used.
+ 
 - a tag MUST correspond to a single unique type within a domain
-
-Each domain is responsible for managing its tags and providing documentation to developers on how the corresponding types are used.
+- payloads with the same tag MUST be formatted the same
 
 
 ## Wire Format Specification / Syntax
@@ -79,10 +84,14 @@ This protocol allows for multiple competing definitions of similar content types
 
 Domains should focus on providing types unique to their service or usecase.
 
+### Tag Selection
+
+New types SHOULD be allocated the next available tag within a domain. Choosing larger values will needlessly increase payload size.
+
 
 ## Security/Privacy Considerations
 
-
+The privacy and security properties are inherited by the protocol used to transmit these payloads.
 
 
 # Appendix A: Domains
@@ -93,7 +102,6 @@ Domain ID's are provided on a first come first serve basis.
 
 
 - A domain MUST only appear once in the table
-- 
 
 | domain_id |  specification repository |
 |-----------|-------------------------------------|
