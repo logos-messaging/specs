@@ -14,7 +14,7 @@ contributors:
 
 Application developers use chat protocols to send payloads between clients. However not all payloads sent over a protocol are intended to be read by the end users. In normal operation a chat protocol needs to notify the chat clients of event changes in order to keep all clients synchronized. With a finite set of message types, its possible to explicitly label each type as "content" or "meta-message" and route the payload appropriately. In an evolving decentralized chat protocol, this is not alway possible. When a client receives a payload it does not understand, there exists an ambiguity of whether this message contains a payload intended for the application, or a protocol message type which it does not understand. This ambiguity makes versioning between clients difficult. 
 
-Furthermore as applications communicating with each other cannot be guaranteed to be compatible, its possible that applications can also receive messages and be uncertain as how to parse incoming messages.
+Furthermore as applications communicating with each other cannot be guaranteed to be compatible, its possible that applications can receive messages and be uncertain as how to parse incoming messages.
 
 Having a mechanism that removes the ambiguity of how to handle payloads intended for end users is beneficial for both clients and applications.
 
@@ -30,20 +30,34 @@ This document makes use of the shared terminology defined in the [CHATDEFS]() pr
 
 A ContentFrame is used to describe messages intended to be consumed by applications/end users. 
 
-The presence of a ContentFrame removes ambiguity of who the handler of a given payload is, and its fields describe how to parse the attached payload. This decouples of the encoded data from the software that created it increasing protocol resilience.
+The presence of a ContentFrame declares a payload ought to be passed to the application, and its fields describe how to parse the attached payload. This decouples the encoded data from the software that created by including the required context.
 
-ContentFrames make no assumptions of the data contained, and defer to 
+When sending and receiving payloads:
 
-- All payloads intended to be consumed by the application MUST be wrapped in a ContentFrame.
+- All payloads created at the application level MUST be wrapped in a ContentFrame.
+- All payloads wrapped in a ContentFrame SHOULD be passed to the application.
+- Unhandled non-ContentFrames MUST NOT be passed to the application.
+
+
+### Concept Mapping
+
+```mermaid
+flowchart TD
+    d[Domain ID] -->|references| D
+    D[Domain] -->|Defines| T[Tag]
+    T -->|References| Specification
+```   
+
 
 ### Domain
 
 A domain defines the authority which governs a set of content types. It cannot be assumed that all specifications covering content types reside in the same location or are governed by the same entity. By including the `domain` receiving application developers can determine where the definition of the type resides, regardless of where it originated.
 
-- a domain MUST be a valid url.
-- a domain SHOULD provide specifications for all of its defined types.
+- A domain MUST be a valid URL as defined in [RFC 3986](https://datatracker.ietf.org/doc/html/rfc3986).
+- A domain MUST contain definitions for its content types.
+- A domain SHOULD be a repository or index of specifications.
 
-To reduce payload size, Domains are mapped to an integer `domain_id`. The mappings can be found [here](#appendix-a-domains)
+To reduce payload size, domains are mapped to an integer `domain_id`. The mappings can be found [here](#appendix-a-domains)
 
 - a domain_id MUST be a positive integer value
 - a domain_id MUST correspond to a single unique domain
@@ -52,9 +66,13 @@ To reduce payload size, Domains are mapped to an integer `domain_id`. The mappin
 
 A tag uniquely defines a type within a domain. After parsing the Domain and the tag application developers have all the data required to process the payload. Each domain is responsible for managing its tags and providing documentation to developers on how the corresponding types are used.
  
-- a tag MUST correspond to a single unique type within a domain
-- payloads with the same tag MUST be formatted the same
+- A tag MUST correspond to a single unique type within a domain.
+- A tag MUST 
+- Two payloads with the same `tag` MUST correspond to the same type.
 
+A domain MAY choose how tags are mapped to types, 
+
+ 
 
 ## Wire Format Specification / Syntax
 
@@ -67,9 +85,8 @@ message ContentFrame {
 ```
 
 **domain_id:** This field contains an integer which identifies the domain of this type.
-**tag:** This field contains an integer which identifies which type `bytes` contains
-**bytes:** This field contains the encoded payload 
-
+**tag:** This field contains an integer which identifies which type `bytes` contains.
+**bytes:** This field contains the encoded payload. 
 
 
 ## Implementation Suggestions (optional)
