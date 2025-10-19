@@ -110,6 +110,7 @@ Kozlov
 lifecycle
 liblogosdelivery
 libp
+Keccak
 libp2p
 Lightpush
 LIGHTPUSH
@@ -159,6 +160,9 @@ Prathi
 pre
 Prem
 ProtocolsConfig
+Nim
+nim
+parityRate
 protobuf
 pubsub
 rateLimitConfig
@@ -211,6 +215,8 @@ SegmentationConfig
 segmentationConfig
 segmentSizeBytes
 sharding
+RLN
+segmentSize
 SHARDING
 sqlite
 subnets
@@ -232,6 +238,7 @@ UUID
 UX
 waku
 Waku
+Waku's
 WAKU
 WakuNode
 www

@@ -12,7 +12,7 @@ This specification defines an application-layer protocol for **segmentation** an
 
 ## Motivation
 
-Waku Relay deployments typically propagate envelopes up to **1 MB**. To support larger application payloads (e.g., up to **10 MiB** or more), a segmentation layer is required. This specification enables larger messages by partitioning them into multiple envelopes and reconstructing them at the receiver. Erasure-coded parity segments provide resilience against partial loss or reordering.
+Waku Relay deployments typically propagate envelopes up to **1 MB**. To support larger application payloads (e.g., up to **10 MB** or more), a segmentation layer is required. This specification enables larger messages by partitioning them into multiple envelopes and reconstructing them at the receiver. Erasure-coded parity segments provide resilience against partial loss or reordering.
 
 ## Terminology
 
@@ -129,7 +129,7 @@ Implementations **SHOULD** support:
 
 **API simplicity:** Libraries **SHOULD** require only `segmentSize` from the application for normal operation.
 
-### Supportability
+### Support
 
 - **Language / Package:** Nim; **Nimble** package manager  
 - **Intended for:** all Waku nodes at the application layer
@@ -163,7 +163,7 @@ Nodes that do **not** implement this specification cannot reconstruct large mess
 
 ---
 
-## Deployability
+## Deploy
 
 - Bandwidth overhead ≈ **12.5%** from parity (if enabled)  
 - Additional per-segment overhead ≤ **100 bytes** (protobuf + metadata)  
@@ -179,9 +179,3 @@ Nodes that do **not** implement this specification cannot reconstruct large mess
 4. [nim-leopard](https://github.com/status-im/nim-leopard) – Nim bindings for Leopard-RS (Reed–Solomon)  
 5. [Leopard-RS](https://github.com/catid/leopard) – Fast Reed–Solomon erasure coding library  
 6. [RFC 2119](https://www.ietf.org/rfc/rfc2119.txt) – Key words for use in RFCs to Indicate Requirement Levels
-
----
-
-## Changelog
-
-- **0.1 — Initial draft**
