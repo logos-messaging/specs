@@ -34,6 +34,7 @@ contentTopic
 contentTopics
 createNode
 createReliableChannel
+Changelog
 creativecommons
 cryptographic
 danielkaiser
@@ -48,6 +49,8 @@ DefaultRateLimitConfig
 DefaultSdsConfig
 DefaultSegmentationConfig
 dev
+dataSegments
+Deployability
 DHT
 discv
 DISCV
@@ -163,6 +166,7 @@ ProtocolsConfig
 Nim
 nim
 parityRate
+proto
 protobuf
 pubsub
 rateLimitConfig
@@ -216,6 +220,7 @@ segmentationConfig
 segmentSizeBytes
 sharding
 RLN
+SegmentMessageProto
 segmentSize
 SHARDING
 sqlite
@@ -236,6 +241,8 @@ unencrypted
 unvalidated
 UUID
 UX
+waku
+uint
 waku
 Waku
 Waku's

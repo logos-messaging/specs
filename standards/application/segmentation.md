@@ -31,7 +31,7 @@ The key words **“MUST”**, **“MUST NOT”**, **“REQUIRED”**, **“SHALL
 
 When the original payload exceeds `segmentSize`, the sender **MUST**:
 
-- Compute a 32-byte `entire_message_hash = Keccak256(originalPayload)`.
+- Compute a 32-byte `entire_message_hash = Keccak256(original_payload)`.
 - Split the payload into one or more **data segments**, each of size up to `segmentSize` bytes.
 - Optionally generate **parity segments** using Reed–Solomon erasure coding, at a fixed parity rate of 12.5%.  
   Implementations **MUST NOT** produce more than 256 total segments (data + parity).
@@ -53,7 +53,7 @@ Upon receiving a segmented message, the receiver **MUST**:
 - Reconstruct by:
   - Concatenating data segments if all are present, or
   - Applying Reed–Solomon decoding if parity segments are available.
-- Verify `Keccak256(reconstructedPayload)` matches `entire_message_hash`.  
+- Verify `Keccak256(reconstructed_payload)` matches `entire_message_hash`.  
   On mismatch, the message **MUST** be discarded and logged as invalid.
 - Once verified, the reconstructed payload **SHALL** be delivered to the application.
 - Incomplete reconstructions **SHOULD** be garbage-collected after a timeout.
@@ -74,7 +74,7 @@ message SegmentMessageProto {
   // Segment payload (data or parity shard)
   bytes  payload                = 4;
 
-  // Parity segment indexing (used iff segments_count == 0)
+  // Parity segment indexing (used if segments_count == 0)
   uint32 parity_segment_index   = 5;
   uint32 parity_segments_count  = 6; // number of parity segments (> 0)
 }
