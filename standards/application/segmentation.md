@@ -12,7 +12,7 @@ This specification defines an application-layer protocol for **segmentation** an
 
 ## Motivation
 
-Waku Relay deployments typically propagate envelopes up to **150 KB** as per [64/WAKU2-NETWORK - Message Size](https://rfc.vac.dev/waku/standards/core/64/network#message-size). To support larger application payloads, a segmentation layer is required. This specification enables larger messages by partitioning them into multiple envelopes and reconstructing them at the receiver. Erasure-coded parity segments provide resilience against partial loss or reordering.
+Waku Relay deployments typically propagate envelopes up to **150 KB** as per [64/WAKU2-NETWORK - Message](https://rfc.vac.dev/waku/standards/core/64/network#message-size). To support larger application payloads, a segmentation layer is required. This specification enables larger messages by partitioning them into multiple envelopes and reconstructing them at the receiver. Erasure-coded parity segments provide resilience against partial loss or reordering.
 
 ## Terminology
 
@@ -137,7 +137,6 @@ Implementations **SHOULD** support:
 ### Privacy
 
 `entire_message_hash` enables correlation of segments that belong to the same original message but does not reveal content.  
-Applications **SHOULD** encrypt payloads before segmentation.  
 Traffic analysis may still identify segmented flows.
 
 ### Integrity
