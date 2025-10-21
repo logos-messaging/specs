@@ -8,11 +8,11 @@ status: draft
 
 ## Abstract
 
-This specification defines an application-layer protocol for **segmentation** and **reconstruction** of messages carried over Waku when the original payload exceeds the maximum Waku's message size. Applications partition the payload into multiple Waku envelopes and reconstruct the original on receipt, even when segments arrive out of order or up to **12.5%** of segments are lost. The protocol uses **Reed–Solomon** erasure coding for fault tolerance. Messages whose payload size is **≤ `segmentSize`** are sent unmodified.
+This specification defines an application-layer protocol for **segmentation** and **reconstruction** of messages carried over Waku when the original payload exceeds the maximum Waku's message size. Applications partition the payload into multiple Waku envelopes and reconstruct the original on receipt, even when segments arrive out of order or up to a **predefined percentage** of segments are lost. The protocol uses **Reed–Solomon** erasure coding for fault tolerance. Messages whose payload size is **≤ `segmentSize`** are sent unmodified.
 
 ## Motivation
 
-Waku Relay deployments typically propagate envelopes up to **1 MB**. To support larger application payloads (e.g., up to **10 MB** or more), a segmentation layer is required. This specification enables larger messages by partitioning them into multiple envelopes and reconstructing them at the receiver. Erasure-coded parity segments provide resilience against partial loss or reordering.
+Waku Relay deployments typically propagate envelopes up to **150 KB** as per [64/WAKU2-NETWORK - Message Size](https://rfc.vac.dev/waku/standards/core/64/network#message-size). To support larger application payloads, a segmentation layer is required. This specification enables larger messages by partitioning them into multiple envelopes and reconstructing them at the receiver. Erasure-coded parity segments provide resilience against partial loss or reordering.
 
 ## Terminology
 
@@ -33,7 +33,7 @@ When the original payload exceeds `segmentSize`, the sender **MUST**:
 
 - Compute a 32-byte `entire_message_hash = Keccak256(original_payload)`.
 - Split the payload into one or more **data segments**, each of size up to `segmentSize` bytes.
-- Optionally generate **parity segments** using Reed–Solomon erasure coding, at a fixed parity rate of 12.5%.  
+- Optionally generate **parity segments** using Reed–Solomon erasure coding, at the predefined parity rate.  
   Implementations **MUST NOT** produce more than 256 total segments (data + parity).
 - Encode each segment as a `SegmentMessageProto` with:
   - The `entire_message_hash`
@@ -92,18 +92,6 @@ No other combinations are permitted.
 
 ---
 
-### Constants
-
-- **Parity rate:** `0.125` (12.5%)
-- **Max total segments (data + parity):** `256` (library limitation)
-- **Overhead targets:**
-  - Bandwidth overhead from parity segments ≤ **12.5%** overall  
-  - Serialization/metadata overhead ≤ **100 bytes** per segment (implementation target)
-
-> **Note:** With a parity rate of 12.5%, reconstruction is possible if **all data segments** are received or if **any combination of data + parity** totals at least `dataSegments` (i.e., up to 12.5% loss tolerated).
-
----
-
 ## Implementation
 
 ### Reed–Solomon
@@ -124,8 +112,16 @@ Implementations **SHOULD** support:
 
 ### Configuration
 
-- `segmentSize` — **REQUIRED**  
-- `parityRate` — fixed at **0.125**  
+**Required parameters:**
+
+- `segmentSize` — **REQUIRED** configurable parameter; maximum size in bytes of each data segment's payload chunk (before protobuf serialization).
+
+**Fixed parameters:**
+
+- `parityRate` — fixed at **0.125** (12.5%)
+- `maxTotalSegments` — **256** (library limitation for data + parity segments combined)
+
+**Reconstruction capability:** With the predefined parity rate, reconstruction is possible if **all data segments** are received or if **any combination of data + parity** totals at least `dataSegments` (i.e., up to the predefined percentage of loss tolerated).
 
 **API simplicity:** Libraries **SHOULD** require only `segmentSize` from the application for normal operation.
 
@@ -163,10 +159,15 @@ Nodes that do **not** implement this specification cannot reconstruct large mess
 
 ---
 
-## Deploy
+## Deployment Considerations
 
-- Bandwidth overhead ≈ **12.5%** from parity (if enabled)  
+**Overhead:**
+
+- Bandwidth overhead ≈ the predefined parity rate from parity (if enabled)  
 - Additional per-segment overhead ≤ **100 bytes** (protobuf + metadata)  
+
+**Network impact:**
+
 - Larger messages increase gossip traffic and storage; operators **SHOULD** consider policy limits
 
 ---
@@ -175,7 +176,8 @@ Nodes that do **not** implement this specification cannot reconstruct large mess
 
 1. [10/WAKU2 – Waku](https://rfc.vac.dev/waku/standards/core/10/waku2)  
 2. [11/WAKU2-RELAY – Relay](https://rfc.vac.dev/waku/standards/core/11/relay)  
-3. [14/WAKU2-MESSAGE – Message](https://rfc.vac.dev/waku/standards/core/14/message)  
-4. [nim-leopard](https://github.com/status-im/nim-leopard) – Nim bindings for Leopard-RS (Reed–Solomon)  
-5. [Leopard-RS](https://github.com/catid/leopard) – Fast Reed–Solomon erasure coding library  
-6. [RFC 2119](https://www.ietf.org/rfc/rfc2119.txt) – Key words for use in RFCs to Indicate Requirement Levels
+3. [14/WAKU2-MESSAGE – Message](https://rfc.vac.dev/waku/standards/core/14/message)
+4. [64/WAKU2-NETWORK](https://rfc.vac.dev/waku/standards/core/64/network#message-size)
+5. [nim-leopard](https://github.com/status-im/nim-leopard) – Nim bindings for Leopard-RS (Reed–Solomon)  
+6. [Leopard-RS](https://github.com/catid/leopard) – Fast Reed–Solomon erasure coding library  
+7. [RFC 2119](https://www.ietf.org/rfc/rfc2119.txt) – Key words for use in RFCs to Indicate Requirement Levels
