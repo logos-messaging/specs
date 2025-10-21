@@ -118,6 +118,7 @@ libp2p
 Lightpush
 LIGHTPUSH
 maxRetransmissions
+maxTotalSegments
 md
 MessageDeliveredEvent
 MessageDeliveryErrorEvent
