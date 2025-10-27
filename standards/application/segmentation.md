@@ -31,7 +31,54 @@ Erasure-coded parity segments provide resilience against partial loss or reorder
 - **`segmentSize`**: configured maximum size in bytes of each data segment's `payload` chunk (before protobuf serialization).
 - **sender public key**: the origin identifier used for indexing persistence.
 
-The key words **“MUST”**, **“MUST NOT”**, **“REQUIRED”**, **“SHALL”**, **“SHALL NOT”**, **“SHOULD”**, **“SHOULD NOT”**, **“RECOMMENDED”**, **“NOT RECOMMENDED”**, **“MAY”**, and **“OPTIONAL”** in this document are to be interpreted as described in [RFC 2119](https://www.ietf.org/rfc/rfc2119.txt).
+The key words **"MUST"**, **"MUST NOT"**, **"REQUIRED"**, **"SHALL"**, **"SHALL NOT"**, **"SHOULD"**, **"SHOULD NOT"**, **"RECOMMENDED"**, **"NOT RECOMMENDED"**, **"MAY"**, and **"OPTIONAL"** in this document are to be interpreted as described in [RFC 2119](https://www.ietf.org/rfc/rfc2119.txt).
+
+## Wire Format
+
+Each segmented message is encoded as a `SegmentMessageProto` protobuf message:
+
+```protobuf
+syntax = "proto3";
+
+message SegmentMessageProto {
+  // Keccak256(original payload), 32 bytes
+  bytes  entire_message_hash    = 1;
+
+  // Data segment indexing
+  uint32 index                  = 2; // zero-based sequence number; valid only if segments_count > 0
+  uint32 segment_count          = 3; // number of data segments (>= 2)
+
+  // Segment payload (data or parity shard)
+  bytes  payload                = 4;
+
+  // Parity segment indexing (used if segments_count == 0)
+  uint32 parity_segment_index   = 5; // zero-based sequence number for parity segments
+  uint32 parity_segments_count  = 6; // number of parity segments (> 0)
+}
+```
+
+**Field descriptions:**
+
+- `entire_message_hash`: A 32-byte Keccak256 hash of the original complete payload, used to identify which segments belong together and verify reconstruction integrity.
+- `index`: Zero-based sequence number identifying this data segment's position (0, 1, 2, ..., segments_count - 1).
+- `segment_count`: Total number of data segments the original message was split into.
+- `payload`: The actual chunk of data or parity information for this segment.
+- `parity_segment_index`: Zero-based sequence number for parity segments.
+- `parity_segments_count`: Total number of parity segments generated.
+
+A message is either a **data segment** (when `segment_count > 0`) or a **parity segment** (when `segment_count == 0`).
+
+### Validation
+
+Receivers **MUST** enforce:
+
+- `entire_message_hash.length == 32`
+- **Data segments:**
+  `segments_count >= 2` **AND** `index < segments_count`
+- **Parity segments:**
+  `segments_count == 0` **AND** `parity_segments_count > 0` **AND** `parity_segment_index < parity_segments_count`
+
+No other combinations are permitted.
 
 ## Segmentation
 
@@ -67,40 +114,6 @@ Upon receiving a segmented message, the receiver:
 - Once verified,
   the reconstructed payload **SHALL** be delivered to the application.
 - Incomplete reconstructions **SHOULD** be garbage-collected after a timeout.
-
-## Wire Format
-
-```protobuf
-syntax = "proto3";
-
-message SegmentMessageProto {
-  // Keccak256(original payload), 32 bytes
-  bytes  entire_message_hash    = 1;
-
-  // Data segment indexing
-  uint32 index                  = 2; // valid only if segments_count > 0
-  uint32 segment_count          = 3; // number of data segments (>= 2)
-
-  // Segment payload (data or parity shard)
-  bytes  payload                = 4;
-
-  // Parity segment indexing (used if segments_count == 0)
-  uint32 parity_segment_index   = 5;
-  uint32 parity_segments_count  = 6; // number of parity segments (> 0)
-}
-```
-
-### Validation
-
-Receivers **MUST** enforce:
-
-- `entire_message_hash.length == 32`
-- **Data segments:**
-  `segments_count >= 2` **AND** `index < segments_count`
-- **Parity segments:**
-  `segments_count == 0` **AND** `parity_segments_count > 0` **AND** `parity_segment_index < parity_segments_count`
-
-No other combinations are permitted.
 
 ---
 
