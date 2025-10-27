@@ -43,7 +43,6 @@ When the original payload exceeds `segmentSize`, the sender:
 - **MUST** split the payload into one or more **data segments**,
   each of size up to `segmentSize` bytes.
 - **MAY** use Reed–Solomon erasure coding at the predefined parity rate.
-  Implementations **MUST NOT** produce more than 256 total segments (data + parity).
 - Encode each segment as a `SegmentMessageProto` with:
   - The `entire_message_hash`
   - Either data-segment indices (`segments_count`, `index`) or parity-segment indices (`parity_segments_count`, `parity_segment_index`)
@@ -133,7 +132,7 @@ Implementations **SHOULD** support:
 **Fixed parameters:**
 
 - `parityRate` — fixed at **0.125** (12.5%)
-- `maxTotalSegments` — **256** (library limitation for data + parity segments combined)
+- `maxTotalSegments` — **256**
 
 **Reconstruction capability:**
 With the predefined parity rate,
