@@ -24,7 +24,7 @@ Erasure-coded parity segments provide resilience against partial loss or reorder
 
 ## Terminology
 
-- **original message**: the full application payload before segmentation.
+- **original payload**: the full application payload before segmentation.
 - **data segment**: one of the partitioned chunks of the original message payload.
 - **parity segment**: an erasure-coded segment derived from the set of data segments.
 - **segment message**: a wire-message whose `payload` field carries a serialized `SegmentMessageProto`.
