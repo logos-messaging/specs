@@ -9,14 +9,22 @@ contributors:
 
 ## Abstract
 
+This specification defines ContentFrame, a self-describing message format for decentralized chat networks. ContentFrame wraps content payloads with metadata identifying their type and governing specification repository. Using a `(domain, tag)` tuple, applications can uniquely identify message types and locate authoritative documentation for parsing unfamiliar content. This approach enables permissionless innovation while maintaining the context needed for interoperability, allowing applications to gracefully handle messages from sources they don't explicitly know about.
 
-## Background / Rationale / Motivation
+## Motivation
 
-Application developers use chat protocols to send payloads between clients. However not all payloads sent over a protocol are intended to be read by the end users. In normal operation a chat protocol needs to notify the chat clients of event changes in order to keep all clients synchronized. With a finite set of message types, its possible to explicitly label each type as "content" or "meta-message" and route the payload appropriately. In an evolving decentralized chat protocol, this is not alway possible. When a client receives a payload it does not understand, there exists an ambiguity of whether this message contains a payload intended for the application, or a protocol message type which it does not understand. This ambiguity makes versioning between clients difficult. 
+In an interoperable chat network, participants cannot be assumed to use the same software to send and receive messages. Users may employ different versions of the same application or different applications entirely. This heterogeneity creates a fundamental challenge: how can applications support extensible message types without prior knowledge of every possible format?
 
-Furthermore as applications communicating with each other cannot be guaranteed to be compatible, its possible that applications can receive messages and be uncertain as how to parse incoming messages.
+Two naive approaches each have significant drawbacks:
 
-Having a mechanism that removes the ambiguity of how to handle payloads intended for end users is beneficial for both clients and applications.
+**Developer-defined types** would allow flexibility but create fragmentation. When developers define their own message types, the context for parsing these messages remains tightly coupled to the software that created them. Other applications receiving these messages lack the necessary context to interpret them correctly. This leads to multiple definitions of basic types such as `Text` and `Image` that are not compatible across applications.
+
+**Fixed type systems** would ensure universal understanding but restrict innovation. A predetermined set of message types eliminates ambiguity but adds friction for developers who want to extend functionality. In a permissionless, decentralized protocol, requiring centralized approval for new message types contradicts core design principles.
+
+The core challenge is managing fragmentation in a decentralized protocol while preserving developer freedom to innovate.
+
+**Solution:** A self-describing message format that encodes both the payload and the metadata needed to parse it. This approach directs application developers on how a message should be parsed while providing a clear path to learn about unfamiliar content types they encounter. By decoupling the encoded data from the specific software that created it, applications can gracefully handle messages from diverse sources without sacrificing extensibility.
+
 
 ## Theory / Semantics
 
@@ -26,100 +34,132 @@ This document makes use of the shared terminology defined in the [CHATDEFS]() pr
 
 [Payload, Application, client]
 
+
 ### ContentFrame
 
-A ContentFrame is used to describe messages intended to be consumed by applications/end users. 
+A ContentFrame provides a self-describing format for payload types by encoding both the type identifier and its administrative origin. The core principle is that each payload should declare which entity is responsible for its definition and provide a unique type discriminator within that entity's namespace.
 
-The presence of a ContentFrame declares a payload ought to be passed to the application, and its fields describe how to parse the attached payload. This decouples the encoded data from the software that created by including the required context.
+A ContentFrame consists of two key components:
 
-When sending and receiving payloads:
+- **Domain**: Points to a specification repository that defines and governs a collection of types
+- **Tag**: A unique identifier within that domain that specifies which type the payload conforms to
 
-- All payloads created at the application level MUST be wrapped in a ContentFrame.
-- All payloads wrapped in a ContentFrame SHOULD be passed to the application.
-- Unhandled non-ContentFrames MUST NOT be passed to the application.
+Together, the tuple `(domain, tag)` serves two purposes:
+
+1. **Identification**: Uniquely identifies the payload type without ambiguity
+2. **Discovery**: Provides a path for developers to learn how to parse and support unfamiliar types
+
+**Benefits:**
+
+This approach provides several advantages for decentralized interoperability:
+
+- **No naming collisions**: Developers can independently create types without coordinating with others, as each domain manages its own namespace
+- **Type reuse**: Well-defined, established types can be shared across applications, reducing fragmentation
+- **Graceful extensibility**: Applications encountering unknown types can direct developers to the authoritative specification
+- **Decentralized governance**: No central authority is required to approve new types; domains manage their own specifications
+
+By separating the "who defines this" (domain) from the "what is this" (tag), ContentFrame enables permissionless innovation while maintaining the context needed for interoperability.
 
 
 ### Concept Mapping
 
+The following diagram illustrates the relationship between ContentFrame components and their specifications:
 ```mermaid
 flowchart TD
     d[Domain ID] -->|references| D
     D[Domain] -->|Defines| T[Tag]
     T -->|References| Specification
-```   
-
+```
 
 ### Domain
 
-A domain defines the authority which governs a set of content types. It cannot be assumed that all specifications covering content types reside in the same location or are governed by the same entity. By including the `domain` receiving application developers can determine where the definition of the type resides, regardless of where it originated.
+A domain identifies the authority responsible for defining and governing a set of content types. By including the domain, receiving applications can locate the authoritative specification for a type, regardless of which application originally sent it.
 
-- A domain MUST be a valid URL as defined in [RFC 3986](https://datatracker.ietf.org/doc/html/rfc3986).
-- A domain MUST contain definitions for its content types.
-- A domain SHOULD be a repository or index of specifications.
+**Requirements:**
 
-To reduce payload size, domains are mapped to an integer `domain_id`. The mappings can be found [here](#appendix-a-domains)
+- A domain MUST be a valid URL as defined in [RFC 3986](https://datatracker.ietf.org/doc/html/rfc3986)
+- A domain MUST host or reference definitions for all content types within its namespace
+- A domain SHOULD be a specification repository or index that developers can reference
 
-- a domain_id MUST be a positive integer value
-- a domain_id MUST correspond to a single unique domain
+**Specification Format:**
+
+Domains are responsible for describing their types in whatever format is most appropriate. The only requirement is that the information needed to parse and understand each type is accessible from the domain URL.
+
+
+**Domain ID Mapping:**
+
+To minimize payload size, domains are mapped to integer identifiers. Each domain is assigned a unique `domain_id` which is used in the wire format instead of the full URL.
+
+- A `domain_id` MUST be a positive integer value
+- A `domain_id` MUST correspond to exactly one unique domain
+- The canonical mapping of `domain_id` to domains can be found in [Appendix A: Domains](#appendix-a-domains)
 
 ### Tag
 
-A tag uniquely defines a type within a domain. After parsing the Domain and the tag application developers have all the data required to process the payload. Each domain is responsible for managing its tags and providing documentation to developers on how the corresponding types are used.
- 
-- A tag MUST correspond to a single unique type within a domain.
-- A tag MUST 
-- Two payloads with the same `tag` MUST correspond to the same type.
+A tag is a numeric identifier that uniquely specifies a content type within a domain's namespace. After resolving the domain and tag, application developers have all the information needed to locate the definition and parse the payload.
 
-A domain MAY choose how tags are mapped to types, 
+**Requirements:**
+
+- A tag MUST be a positive integer value
+- A tag MUST uniquely identify a single type within its domain
+- Two payloads with the same `(domain, tag)` tuple MUST conform to the same type specification
+- A tag's meaning MUST NOT change after it has been assigned within a domain
+
+**Domain Responsibility:**
+
+Each domain is responsible for:
+- Assigning and managing tag values within its namespace
+- Documenting how each tag maps to a type specification
+- Ensuring tag assignments remain stable and unambiguous
+
+Tags are scoped to their domain, meaning the same tag value can represent different types in different domains without conflict.
 
  
 
 ## Wire Format Specification / Syntax
-
 ```protobuf
 message ContentFrame {
     uint32 domain_id = 1;
     uint32 tag = 2;
-    bytes bytes = 3;
+    bytes payload = 3;
 }
 ```
 
-**domain_id:** This field contains an integer which identifies the domain of this type.
-**tag:** This field contains an integer which identifies which type `bytes` contains.
-**bytes:** This field contains the encoded payload. 
+**Field Descriptions:**
+
+- **domain_id**: Identifies the domain that governs this content type
+- **tag**: Identifies the specific content type within the domain's namespace
+- **payload**: The encoded content data
+
+All fields are required.
 
 
-## Implementation Suggestions (optional)
+## Implementation Suggestions
 
-### Tags -> Specifications
+### Tags to Specifications
 
-If possible the integer tag values should be the same as the specification which defines the type used. While not necessary, using the specification id directly removes the requirement to maintain a separate mapping of tag -> specification. 
+Where possible, tag values should directly correspond to specification identifiers. Using specification IDs as tags removes the need to maintain a separate mapping between tags and specifications.
 
 ### Fragmentation
 
-This protocol allows for multiple competing definitions of similar content types. Having multiple definitions of a `TextMessage` or `Image` will increase fragmentation between applications. Where possible reusing existing types will reduce burden on app developers, and increase interoperability between apps.
+This protocol allows multiple competing definitions of similar content types. Having multiple definitions of `Text` or `Image` increases fragmentation between applications. Where possible, reusing existing types will reduce burden on developers and increase interoperability.
 
-Domains should focus on providing types unique to their service or usecase.
-
-### Tag Selection
-
-New types SHOULD be allocated the next available tag within a domain. Choosing larger values will needlessly increase payload size.
-
-
-## Security/Privacy Considerations
-
-The privacy and security properties are inherited by the protocol used to transmit these payloads.
+Domains should focus on providing types unique to their service or use case.
 
 
 # Appendix A: Domains
-**TODO:** 
-- Find appropriate home for this.
 
-Domain ID's are provided on a first come first serve basis.
+![TODO] Find appropriate home for this registry.
 
+Domain IDs are assigned sequentially on a first-come, first-served basis. New domains are added via pull request.
+
+**Registry Rules:**
 
 - A domain MUST only appear once in the table
+- A domain MAY be updated by the original submitter if the repository has been moved
 
-| domain_id |  specification repository |
-|-----------|-------------------------------------|
-| 0         |   https://github.com/waku-org/specs |   
+**Registry:**
+
+| domain_id | specification repository             |
+|-----------|--------------------------------------|
+| 0         | https://github.com/waku-org/specs    |
