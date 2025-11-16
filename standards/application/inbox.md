@@ -14,7 +14,7 @@ contributors:
 
 Communication protocols often face a fundamental bootstrapping problem: how can two parties establish secure, authenticated communication when they lack trusted channels? Traditional centralized approaches rely on servers to deliver invitations using pre-agreed upon encryption mechanisms. 
 
-In a decentralized context, this problem is more pronounced as participants cannot rely on an external service to help navigate version mismatches and client routing. Senders must know where participants are listening for messages and how to encode messages. Clients running older versions of the protocol are not able to interoperate with newer protocol versions which can fragment the network during upgrades.
+In a decentralized context, this problem is more pronounced as participants cannot rely on an external service to help navigate version mismatches and client routing. Senders must know where participants are listening for messages and how to encode them so they can be properly received. Clients running older versions of the protocol are not able to interoperate with newer protocol versions which can fragment the network during upgrades.
 
 
 # Theory / Semantics
@@ -33,7 +33,7 @@ The terms include:
 ## Inbox
 
 Inboxes are a mechanism for a client to receive messages from others which it does not share a channel with. 
-They are inbound only method to exchange payloads with a client. Its most direct application is to enable the reception of invites to other communication channels.
+They are an inbound only method to exchange payloads with a client. Its most direct application is to enable the reception of invites to other communication channels.
 
 They provide :
  - Payload Confidentiality: Only the participants can read the contents of any message sent.
