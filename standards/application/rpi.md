@@ -14,19 +14,26 @@ This specification defines Ratcheting Private Identifiers (RPIs), a cryptographi
 ## Background
 
 End-to-end encrypted chat protocols like Double Ratchet provide strong message privacy and forward secrecy.
-However, they don't address a fundamental question: how does a recipient know which key to use for decryption?
+However it is up to developers to solve 2 outstanding problems:
+1. **Payload discovery**: Efficiently determining whether a message is intended for this recipient.
+2. **Decryption state association**: Mapping a discovered payload to the correct decryption state
 
-The problem is similar to receiving an encrypted postcard.
-With a single sender, you know who sent it.
-With multiple senders, it's unclear whose keys were used during encryption.
-Naively including sender information in cleartext leaks metadata, while attempting decryption with every possible key becomes inefficient at scale.
-Header encryption techniques can protect additional metadata but don't solve the key selection problem.
+### Recipient Payload Discovery
 
-In peer-to-peer systems where recipient privacy is desired, messages cannot explicitly identify their intended recipient.
-Without a way to determine which messages are intended for them, recipients must attempt to decrypt everything they receive.
+Existing solutions fall into two categories based on how messages are delivered to clients.
 
-Modern chat systems need protection from large-scale collection attacks while delivering efficient user experiences.
-This requires a mechanism to associate messages with conversations without leaking metadata or requiring trial decryption.
+Centrally routed solutions require the sender's identity in order to deliver messages to their intended destination. Clients in these systems only receive their share of the traffic, which is trivial for them to attempt decryption on every message. These applications avoid the issue entirely, by forfeiting some degree of recipient/conversation privacy. 
+
+Peer-to-peer broadcast routed solutions which maintain recipient privacy also sacrifice performance. Approaches include attempting decryption on all messages received to determine if this payload is of interest. Dividing the broadcast domains into discrete bins can help reduce the processing load, however only to a point. Each broadcast bin must maintain enough traffic to maintain k-anonymity, else the solution matches the centralized approach.   
+
+### Decryption state association
+
+To decrypt its contents a message must be associated to a particular encryption state. An existing solution to this problem is to include an identifier in the payload header, and use a header encryption scheme to add confidentiality. Using asymmetric encryption with a recipient's public key and an ephemeral key is a common approach. From a privacy perspective this solution is good. However the performance impact is dependent on payload discovery. Clients can get great performance at the cost of sacrificing recipient privacy - or perform the slow operation of performing key-derivations on every message.
+
+### Problem Summary
+
+Existing solutions either sacrifice recipient privacy (enabling traffic analysis) or sacrifice performance (requiring trial decryption at scale). A solution is needed that scales to P2P broadcast routing while maintaining recipient privacy without centralized trust.
+
 
 ## Theory 
 
