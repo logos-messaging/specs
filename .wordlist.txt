@@ -1,8 +1,11 @@
 ALLOC
+BCP
+Bradner
 creativecommons
 danielkaiser
 DHT
 DoS
+encodings
 github
 GITHUB
 gossipsub
@@ -10,6 +13,7 @@ GossipSub
 https
 iana
 IANA
+implementers
 libp2p
 md
 pubsub
