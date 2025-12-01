@@ -68,7 +68,7 @@ Other specific message types include:
 
 ### Transports
 
-**Out-of-Band**: The transfer of information using a channel separate from the defined protocol channel. Data sent Out-of-Band is transmitted using an undefined mechanism. This is used when protocols requires information to be shared with another entity, but it does not describe how that should occur. The responsibility to define how this occurs is the implementer or other protocols in the suite. 
+**Out-of-Band**: The transfer of information using a channel separate from the defined chat protocol. Data sent Out-of-Band is transmitted using an undefined mechanism. This is used when protocols requires information to be shared with another entity, but it does not describe how that should occur. The responsibility to define how this occurs is the implementer or other protocols in the suite. 
 
 
 ### Software Entities
