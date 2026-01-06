@@ -180,6 +180,10 @@ types:
   ReliableChannel:
     type: object
     description: "A Reliable Channel instance that provides eventual consistency guarantees."
+    fields:
+      sync_status:
+        type: SyncStatus
+        description: "An event target that emits synchronization status events. Use this to track whether the channel is fully synchronized with all participants."
 
   ReliableChannelOptions:
     type: object
@@ -440,6 +444,32 @@ types:
       reason:
         type: string
         description: "The reason the ephemeral message was dropped (e.g., 'rate_limit_approached', 'rate_limit_reached')."
+
+  SyncStatus:
+    type: object
+    description: "An event target that emits synchronization status events. Accessible via the reliable channel's sync_status property."
+    events:
+      synced:
+        type: event<SyncStatusDetail>
+        description: "Emitted when the channel is not aware of any missing messages that can still be retrieved. Note that some messages may have been permanently lost."
+
+      syncing:
+        type: event<SyncStatusDetail>
+        description: "Emitted when the channel is aware of missing messages and is attempting to retrieve them."
+
+  SyncStatusDetail:
+    type: object
+    description: "Details about the current synchronization state of the channel."
+    fields:
+      received:
+        type: uint
+        description: "Count of messages successfully obtained."
+      missing:
+        type: uint
+        description: "Count of messages absent but potentially retrievable."
+      lost:
+        type: uint
+        description: "Count of messages considered permanently lost (irretrievable due to timeout or unavailability)."
 ```
 
 #### Extended definitions
@@ -500,6 +530,31 @@ The following errors are considered irrecoverable and will trigger `sending-mess
 - WAKU2-RLN-RELAY proof generation failed
 
 When an irrecoverable error occurs, the retry mechanism SHOULD NOT attempt to resend the message.
+
+**Sync status**:
+
+The `sync_status` property provides visibility into the channel's synchronization state.
+This is useful for displaying loading indicators, alerting users about missing content, or detecting permanently lost data.
+
+The channel operates in two states:
+
+1. **Synced**: The channel is not aware of any missing messages that can still be retrieved.
+   However, some data may have been permanently lost (indicated by `lost` count > 0).
+
+2. **Syncing**: The channel is aware of missing messages and is attempting to retrieve them.
+
+Events are emitted on the `sync_status` object (not the main channel):
+- `synced`: Emitted when the channel transitions to the synced state
+- `syncing`: Emitted when the channel transitions to the syncing state, or when the sync status details change while syncing
+
+Both events include a `SyncStatusDetail` object with:
+- `received`: Count of messages successfully obtained
+- `missing`: Count of messages absent but potentially retrievable
+- `lost`: Count of messages considered permanently lost
+
+Lost messages are those that could not be retrieved within the configured `timeout_for_lost_messages_ms`.
+When messages are marked as permanently lost, there is currently no automatic recovery mechanism available.
+Future improvements MAY introduce additional recovery options.
 
 ### Channel lifecycle
 
