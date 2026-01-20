@@ -94,36 +94,11 @@ How these are transferred is out of scope for this protocol.
 
 ## Key Exchange
 
-Inbox messages are encrypted using a variant of the KX noise handshake. 
-
-```
-KX:
-  -> s
-  ...
-  -> e
-  <- e, ee, se, s, es
-```
-
-To maintain asynchronicity of the key exchange the Noise:initiators ephemeral key is sent as a pre-message along with the initiators long term secret. 
-
-
-A equivalent way of writing this using noise handshake notation would be: 
-
-```
-XK0:
-  <- s
-  <- e
-  ...
-  -> e, ee, es, s, se  
-```
-In this notation the noise roles have been swapped so that the noise initiator aligns with the protocols definitions of a `Sender`. 
-
+[TODO]
 
 ## Ciphersuite
 
-The noise handshake is implemented with the following functions:
-
-DH: X25519 cipher: AEAD_CHACHA20_POLY1305 hash: BLAKE2b
+[TODO]
 
 ## Recipient Key Identifier  
 When receiving a payload it is initially unclear which Recipients ephemeral key was used by the sender in the noise handshake. 
@@ -154,12 +129,17 @@ The wire format is specified using protocol buffers v3.
 
 ### Encryption Wrapper
 ```protobuf
-message NoiseXK0 {
-    bytes ephemeral = 1;
-    bytes key_ref = 2; 
-    bytes static = 3;       //Encrypted
-    bytes payload = 4;
+message InboxHandshakeV1 {
+    message InboxHeaderV1 {
+        bytes initiator_static = 1;    
+        bytes initiator_ephemeral = 2;  
+        bytes responder_static = 3;    
+        bytes responder_ephemeral = 4; // Replace with RKI to save bytes
+    }
+    InboxHeader header = 1;
+    bytes payload = 2;
 }
+
 ```
 Message provides the required parameters for a recipient to decrypt a message using the XK0 handshake pattern.
 
