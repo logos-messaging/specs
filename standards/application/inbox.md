@@ -54,7 +54,7 @@ This protocol assumes that a delivery service is used to transport messages as d
 
 - Recipient subscribes to a `delivery_address`.
 - Recipient and Sender exchange the required data out of band.
-- Sender sends message to the `deliver_address` encrypted for the recipient.
+- Sender sends message to the `delivery_address` encrypted for the recipient.
 
 ```mermaid
 sequenceDiagram
@@ -87,9 +87,9 @@ Each participant has two keys:
 
 ## Pre-messages 
 
-As a prerequiste to establishing a secure channel, the `sender` must know the `recipients` InstallationKey and EphemeralKey
+As a prerequisite to establishing a secure channel, the `sender` must know the `recipients` InstallationKey and EphemeralKey
 
-How these are transfered is out of scope for this protocol.
+How these are transferred is out of scope for this protocol.
 
 
 ## Key Exchange
@@ -125,7 +125,7 @@ The noise handshake is implemented with the following functions:
 
 DH: X25519 cipher: AEAD_CHACHA20_POLY1305 hash: BLAKE2b
 
-## Recipient Key Identifer 
+## Recipient Key Identifier  
 When receiving a payload it is initially unclear which Recipients ephemeral key was used by the sender in the noise handshake. 
 The Recipient sends their ephemeral key out of band, and there may exist many such keys. The recipient could exhaustively attempt decryption with it's available keys however this is potentially inefficient. Additionally in the case of decryption failure, its ambiguious whether the ephemeral keys was never valid or has expired/consumed.
 
