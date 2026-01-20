@@ -8,13 +8,21 @@ matrix:
     mode: none
     add-filter:
       - url
+    camel-case: true        # accept CamelCase words
+    run-together: true 
   dictionary:
     wordlists:
     - .wordlist.txt
   pipeline:
-    - pyspelling.filters.markdown
-    - pyspelling.filters.html:
-        comments: false
-    - pyspelling.filters.text
+  - pyspelling.filters.markdown:
+      markdown_extensions:
+      - markdown.extensions.extra
+  - pyspelling.filters.html:
+      comments: false
+      attributes:
+      - title
+      - alt
+      ignores:
+      - code
   default_encoding: utf-8
   suggest: true
