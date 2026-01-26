@@ -30,7 +30,7 @@ contributors:
       * [Predefined values](#predefined-values)
       * [Extended definitions](#extended-definitions)
   * [The Validation API](#the-validation-api)
-  * [Health Status](#health-status)
+  * [Connection Status](#connection-status)
   * [Event Source](#event-source)
   * [Security/Privacy Considerations](#securityprivacy-considerations)
   * [Copyright](#copyright)
@@ -315,30 +315,30 @@ that would contain all validation parameters including RLN.
 In the time being, parameters specific to RLN are accepted for the message validation.
 RLN can also be disabled.
 
-## Health Status
+## Connection Status
 
 #### Type definitions
 
 ```yml
 types:
-  HealthStatus:
+  ConnectionStatus:
     type: enum
-    values: [Unhealthy, MinimallyHealthy, Healthy]
+    values: [Disconnected, PartiallyConnected, Connected]
     description: "Used to identify health of the operating node"
 ```
 
 #### Extended definitions
 
-`Unhealthy` indicates that the node has lost connectivity for message reception,
+`Disconnected` indicates that the node has lost connectivity for message reception,
 sending, or both, and as a result, it cannot reliably receive or transmit messages.
 
-`MinimallyHealthy` indicates that the node meets the minimum operational requirements:
+`PartiallyConnected` indicates that the node meets the minimum operational requirements:
 it is connected to at least one peer with a protocol to send messages ([LIGHTPUSH](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/19/lightpush.md) or [RELAY](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/11/relay.md)), 
 one peer with a protocol to receive messages ([FILTER](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/12/filter.md) or [RELAY](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/11/relay.md)),
 and one peer with [STORE](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/13/store.md) service capabilities,
 although performance or reliability may still be impacted.
 
-`Healthy` indicates that the node is operating optimally,
+`Connected` indicates that the node is operating optimally,
 with full support for message reception and transmission.
 
 ## Event Source
@@ -347,7 +347,7 @@ with full support for message reception and transmission.
 
 ```yaml
 types:
-  HealthStatusEvent:
+  ConnectionStatusEvent:
     type: object
     fields:
       eventType:
@@ -355,8 +355,8 @@ types:
         default: "health"
         description: "Event type identifier"
       status:
-        type: HealthStatus
-        description: "Node health status emitted on state change"
+        type: ConnectionStatus
+        description: "Node connection status emitted on state change"
 
 EventSource:
   type: object
@@ -367,7 +367,7 @@ EventSource:
       description: "Callback for captured events"
       parameters:
         - name: event
-          type: HealthStatusEvent
+          type: ConnectionStatusEvent
 ```
 
 ## Security/Privacy Considerations
