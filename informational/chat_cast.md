@@ -16,7 +16,8 @@ The goal is to improve clarity and consistency when describing protocol roles, a
 ## Background
 
 When documenting applications and protocols, it is often beneficial to define a consistent set of characters representing common roles.
-A shared cast allows authors to convey meaning and intent without repeatedly redefining actors and their properties.
+A shared cast allows authors to convey meaning and intent quickly to readers.
+Readers are not required to understand these meanings, however consistent usage can make comprehension faster to achieve. 
 
 This approach is well established in cryptographic literature, where `Alice` and `Bob` are commonly used to describe participants in key exchange protocols.
 Within that context, Alice typically initiates the exchange and Bob responds.
@@ -36,14 +37,23 @@ For these reasons, when documenting communication protocols that integrate multi
 ### Use of Alice and Bob
 
 `Alice` and `Bob` SHOULD be used when describing novel cryptographic constructions or key exchange mechanisms that are not embedded within higher-layer communication protocols.
-
-These names are widely understood by readers in cryptographic contexts, and introducing alternative names in such cases is likely to reduce clarity rather than improve it.
+These names are widely understood in cryptographic contexts, and introducing alternatives would reduce clarity.
 
 Communication protocols may incorporate cryptographic components, but they are not themselves cryptographic key exchanges.
-Descriptions of encodings, payload formats, transport behavior, or reliability mechanisms would be out of place in a cryptographic specification.
-
-When documenting processes that are primarily application-centric or protocol-level, the cast defined in this document SHOULD be used instead.
+When documenting application-centric or protocol-level processes, the cast defined in this document SHOULD be used instead.
 This separation establishes clear contextual boundaries and prepares the reader to reason about different layers independently.
+
+### Standalone Documents
+
+Knowledge of this cast MUST NOT be a requirement to understand a given document.
+Documents MUST be fully standalone and understandable to first-time readers.
+
+### Consistency
+
+Use of the cast is optional.
+Characters SHOULD only be used when their presence improves understanding.
+Using characters in the wrong context can negatively impact comprehension by implying incorrect information.
+It is always acceptable to use other identifiers.
 
 ## Character List
 
