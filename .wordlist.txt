@@ -1,5 +1,6 @@
 ALLOC
 creativecommons
+cryptographic
 danielkaiser
 DHT
 DoS
@@ -12,9 +13,12 @@ iana
 IANA
 libp2p
 md
+Pax
 pubsub
+Raya
 rfc
 RFC
+Saro
 SHARDING
 subnets
 Waku
