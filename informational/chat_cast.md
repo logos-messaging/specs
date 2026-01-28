@@ -57,21 +57,21 @@ It is always acceptable to use other identifiers.
 
 ## Character List
 
-The following characters are defined for use throughout the documentation of chat protocols.
+The following characters are defined for use throughout the documentation of chat protocols. Documentation and examples focus on a portion of a real clients operation for simplicity. Using the character who corresponds to the role or perspective being highlighted, can help convey this information to readers.
 
 **Saro**  
-The initial sender.
+Sender ::
 Saro is the participant who sends the first message within a given time window or protocol context.
 Saro MAY be the party who initiates a conversation, or simply the first participant to act relative to a defined starting reference.
 
 **Raya**  
-The initial recipient.
+Recipient ::
 Raya is the participant who receives the first message sent by Saro.
 After the initial exchange, Raya MAY send messages and behave as a regular participant in the conversation.
 When documenting message receipt or processing, Raya’s perspective SHOULD be used.
 
 **Pax**  
-A generic participant.
+Participant ::
 Pax represents an additional member of a conversation, typically in a group context.
 Pax is often used when the specific identity or perspective of the participant is not relevant to the discussion.
 
@@ -90,6 +90,10 @@ Short, easily distinguishable names SHOULD be preferred, provided they do not re
 ### Inclusivity
 
 The cast of characters SHOULD be diverse, culturally neutral, and avoid reinforcing stereotypes.
+
+### Mnemonic Naming 
+
+Where possible the characters name should hint at their role in order to make them easier to remember.
 
 ## Copyright
 
