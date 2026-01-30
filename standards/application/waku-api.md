@@ -36,6 +36,8 @@ contributors:
   * [Event source](#event-source)
       * [Type definitions](#type-definitions-2)
   * [The Validation API](#the-validation-api)
+  * [Connection Status](#connection-status)
+  * [Event Source](#event-source)
   * [Security/Privacy Considerations](#securityprivacy-considerations)
   * [Copyright](#copyright)
 <!-- TOC -->
@@ -427,6 +429,61 @@ that would contain all validation parameters including RLN.
 
 In the time being, parameters specific to RLN are accepted for the message validation.
 RLN can also be disabled.
+
+## Connection Status
+
+#### Type definitions
+
+```yml
+types:
+  ConnectionStatus:
+    type: enum
+    values: [Disconnected, PartiallyConnected, Connected]
+    description: "Used to identify health of the operating node"
+```
+
+#### Extended definitions
+
+`Disconnected` indicates that the node has lost connectivity for message reception,
+sending, or both, and as a result, it cannot reliably receive or transmit messages.
+
+`PartiallyConnected` indicates that the node meets the minimum operational requirements:
+it is connected to at least one peer with a protocol to send messages ([LIGHTPUSH](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/19/lightpush.md) or [RELAY](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/11/relay.md)), 
+one peer with a protocol to receive messages ([FILTER](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/12/filter.md) or [RELAY](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/11/relay.md)),
+and one peer with [STORE](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/13/store.md) service capabilities,
+although performance or reliability may still be impacted.
+
+`Connected` indicates that the node is operating optimally,
+with full support for message reception and transmission.
+
+## Event Source
+
+#### Type definitions
+
+```yaml
+types:
+  ConnectionStatusEvent:
+    type: object
+    fields:
+      eventType:
+        type: string
+        default: "health"
+        description: "Event type identifier"
+      status:
+        type: ConnectionStatus
+        description: "Node connection status emitted on state change"
+
+EventSource:
+  type: object
+  description: "Event source for Waku API events"
+  fields:
+    onEvent:
+      type: function
+      description: "Callback for captured events"
+      parameters:
+        - name: event
+          type: ConnectionStatusEvent
+```
 
 ## Security/Privacy Considerations
 
