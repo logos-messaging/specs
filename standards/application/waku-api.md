@@ -501,7 +501,7 @@ functions:
     description: "Unsubscribe from specific content topics"
     parameters:
       - name: contentTopics
-        type: Array<string>
+        type: Array<ContentTopic>
         description: "The content topics for the node to unsubscribe from."
     returns:
         type: void
