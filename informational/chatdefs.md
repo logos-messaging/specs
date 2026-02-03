@@ -77,6 +77,9 @@ Other specific message types include:
 
 **Application**: Software that integrates with a Client in order to send and receive content. Applications are responsible for displaying content and controlling what content gets sent. 
 
+**Session**: A specific instance of a message encryption protocol such as MLS or DoubleRatchet. A Session represents shared encryption state between a group of participants.
+
+**Conversation**: An instance of a chat protocol with a set of participants. Conversations are instances of a communication channel with associated state persistence, encoding, and implementation details. Conversations MAY contain one or more session instance, but are also responsible for higher level features such as participant management.
 
 
 ## Wire Format Specification / Syntax
