@@ -456,6 +456,11 @@ The node uses [P2P-RELIABILITY](/standards/application/p2p-reliability.md) strat
 ```yaml
 types:
 
+  SubscribeAction:
+    type: enum
+    values: [Subscribe, Unsubscribe]
+    description: "Defines the subscription action that was performed"
+
   SubscriptionErrorEvent:
     type: object
     description: "Event emitted when a content topic subscription-related operation fails"
@@ -463,9 +468,9 @@ types:
       content-topic:
         type: string
         description: "Content topic that the node failed to subscribe to or unsubscribe from"
-      subscribe:
-        type: bool
-        description: "True if failed to subscribe, false if failed to unsubscribe instead"
+      action:
+        type: SubscribeAction
+        description: "Defines the subscription action that was attempted"
       error:
         type: string
         description: "Error message describing what went wrong"
