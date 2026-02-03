@@ -567,7 +567,7 @@ types:
 functions:
 
   check-api-availability:
-    description: "Get current binary connectivity status"
+    description: "Get current connectivity status"
     parameters:
       - name: waku
         type: WakuNode
