@@ -323,6 +323,9 @@ types:
       "error:subscribe":
         type: string
         description: "Event emitted when subscription to a content topic irremediably fails. The event contains an error message."
+      "error:unsubscribe":
+        type: string
+        description: "Event emitted when unsubscribing from a content topic irremediably fails. The event contains an error message."
   # Extending `WakuNode` definition
   WakuNode:
     fields:
@@ -364,6 +367,14 @@ functions:
         description: "The content topics for the node to subscribe to."
     returns:
         type: void
+  unsubscribe:
+    description: "Unsubscribe from specific content topics"
+    parameters:
+      - name: contentTopics
+        type: Array<string>
+        description: "The content topics for the node to unsubscribe from."
+    returns:
+        type: void
 ```
 
 #### Predefined values
@@ -382,8 +393,10 @@ Only messages on subscribed content topics SHOULD be emitted by `messageEmitter`
 **`error`**:
 
 Only irremediable failures should lead to emitting a `"error:subscribe"`.
-Failure to reach nodes can be omitted, and should be handled via the health (TODO) events;
+Failure to reach nodes can be omitted, and should be handled via the health events;
 [P2P-RELIABILITY](/standards/application/p2p-reliability.md) SHOULD handle automated re-subscriptions and redundancy.
+
+An `"error:unsubscribe"` is emitted if there is no content topic subscription to unsubscribe from, or ongoing content topic subscription attempt to cancel.
 
 Examples of irremediable failures are:
 
