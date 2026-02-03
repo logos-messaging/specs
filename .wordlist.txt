@@ -95,6 +95,7 @@ rpc
 SHARDING
 sharding
 subnets
+SubscribeAction
 SubscriptionErrorEvent
 subscriptionEvents
 SubscriptionEvents
