@@ -495,7 +495,7 @@ functions:
         type: Array<string>
         description: "The content topics for the node to subscribe to."
     returns:
-        type: void
+        type: result<void, error>
 
   unsubscribe:
     description: "Unsubscribe from specific content topics"
