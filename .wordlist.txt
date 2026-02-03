@@ -12,6 +12,7 @@ config
 ConnectionStatus
 ConnectionStatusEvent
 contentTopic
+contentTopics
 createNode
 creativecommons
 danielkaiser
@@ -38,11 +39,15 @@ github
 GITHUB
 gossipsub
 GossipSub
+HealthConnectionStatusEvent
+healthEvents
+HealthEvents
 https
 iana
 IANA
 IDL
 implementor
+Init
 ipv
 iterable
 KiB
@@ -54,7 +59,11 @@ md
 MessageEnvelope
 MessageErrorEvent
 MessageEvents
+messageEvents
 MessagePropagatedEvent
+MessageReceivedEvent
+MessageSendErrorEvent
+MessageSendPropagatedEvent
 MessageSentEvent
 MessageValidation
 multiaddr
@@ -86,6 +95,9 @@ rpc
 SHARDING
 sharding
 subnets
+SubscriptionErrorEvent
+subscriptionEvents
+SubscriptionEvents
 TBD
 tcp
 TCP
