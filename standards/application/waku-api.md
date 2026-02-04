@@ -144,9 +144,6 @@ types:
       messageEvents:
         type: MessageEvents
         description: "The node's messaging event emitter"
-      subscriptionEvents:
-        type: SubscriptionEvents
-        description: "The node's content-topic subscription event emitter"
       healthEvents:
         type: HealthEvents
         description: "The node's health monitoring event emitter"
@@ -456,21 +453,13 @@ The node uses [P2P-RELIABILITY](/standards/application/p2p-reliability.md) strat
 ```yaml
 types:
 
-  SubscribeAction:
-    type: enum
-    values: [Subscribe, Unsubscribe]
-    description: "Defines the subscription action that was performed"
-
-  SubscriptionErrorEvent:
+  SubscriptionError:
     type: object
-    description: "Event emitted when a content topic subscription-related operation fails"
+    description: "A content topic subscription-related operation failed synchronously and irremediably"
     fields:
       content-topic:
         type: string
         description: "Content topic that the node failed to subscribe to or unsubscribe from"
-      action:
-        type: SubscribeAction
-        description: "Defines the subscription action that was attempted"
       error:
         type: string
         description: "Error message describing what went wrong"
@@ -495,7 +484,7 @@ functions:
         type: Array<string>
         description: "The content topics for the node to subscribe to."
     returns:
-        type: result<void, error>
+        type: result<void, array<SubscriptionError>>
 
   unsubscribe:
     description: "Unsubscribe from specific content topics"
@@ -504,7 +493,7 @@ functions:
         type: Array<ContentTopic>
         description: "The content topics for the node to unsubscribe from."
     returns:
-        type: void
+        type: result<void, array<SubscriptionError>>
 ```
 
 #### Subscriptions extended definitions
@@ -563,18 +552,7 @@ types:
 
 #### Health function definitions
 
-```yml
-functions:
-
-  check-api-availability:
-    description: "Get current connectivity status"
-    parameters:
-      - name: waku
-        type: WakuNode
-        description: "The node to check for a binary connectivity status."
-    returns:
-      type: result<void, error>
-```
+TODO
 
 #### Health extended definitions
 
