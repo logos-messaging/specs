@@ -24,20 +24,26 @@ contributors:
     * [Language mappings](#language-mappings)
     * [Application](#application)
   * [The Waku API](#the-waku-api)
-    * [Initialise Waku node](#initialise-waku-node)
-      * [Type definitions](#type-definitions)
-      * [Function definitions](#function-definitions)
-      * [Predefined values](#predefined-values)
-      * [Extended definitions](#extended-definitions)
-  * [Send messages](#send-messages)
-      * [Type definitions](#type-definitions-1)
-      * [Function definitions](#function-definitions-1)
-      * [Extended definitions](#extended-definitions-1)
-  * [Event source](#event-source)
-      * [Type definitions](#type-definitions-2)
+    * [Common](#common)
+      * [Common type definitions](#common-type-definitions)
+    * [Init node](#init-node)
+      * [Init node type definitions](#init-node-type-definitions)
+      * [Init node function definitions](#init-node-function-definitions)
+      * [Init node predefined values](#init-node-predefined-values)
+      * [Init node extended definitions](#init-node-extended-definitions)
+    * [Messaging](#messaging)
+      * [Messaging type definitions](#messaging-type-definitions)
+      * [Messaging function definitions](#messaging-function-definitions)
+      * [Messaging extended definitions](#messaging-extended-definitions)
+    * [Subscriptions](#subscriptions)
+      * [Subscriptions type definitions](#subscriptions-type-definitions)
+      * [Subscriptions function definitions](#subscriptions-function-definitions)
+      * [Subscriptions extended definitions](#subscriptions-extended-definitions)
+    * [Health](#health)
+      * [Health type definitions](#health-type-definitions)
+      * [Health function definitions](#health-function-definitions)
+      * [Health extended definitions](#health-extended-definitions)
   * [The Validation API](#the-validation-api)
-  * [Connection Status](#connection-status)
-  * [Event Source](#event-source)
   * [Security/Privacy Considerations](#securityprivacy-considerations)
   * [Copyright](#copyright)
 <!-- TOC -->
@@ -120,19 +126,39 @@ library_name: "waku"
 description: "Waku: a private and censorship-resistant message routing library."
 ```
 
-### Initialise Waku node
+### Common
 
-#### Type definitions
+This section describes common types used throughout the API.
+
+Note that all types in the API are described once in this document, in a single section. Types should just forward-reference other types when needed.
+
+#### Common type definitions
 
 ```yaml
 types:
+
   WakuNode:
     type: object
     description: "A Waku node instance."
     fields:
-      message_events:
+      messageEvents:
         type: MessageEvents
-        description: "Message related events."
+        description: "The node's messaging event emitter"
+      healthEvents:
+        type: HealthEvents
+        description: "The node's health monitoring event emitter"
+
+  RequestId:
+    type: string
+    description: "A unique identifier for a request"
+```
+
+### Init node
+
+#### Init node type definitions
+
+```yaml
+types:
 
   NodeConfig:
     type: object
@@ -226,10 +252,11 @@ types:
         description: "The epoch size to use for RLN, in seconds"
 ```
 
-#### Function definitions
+#### Init node function definitions
 
 ```yaml
 functions:
+
   createNode:
     description: "Initialise a Waku node instance"
     parameters:
@@ -240,7 +267,7 @@ functions:
         type: result<WakuNode, error>
 ```
 
-#### Predefined values
+#### Init node predefined values
 
 ```yaml
 values:
@@ -291,7 +318,7 @@ values:
       rln_config: none
 ```
 
-#### Extended definitions
+#### Init node extended definitions
 
 **`mode`**:
 
@@ -319,12 +346,13 @@ If the `mode` set is `core`, the initialised `WakuNode` SHOULD use:
 `edge` mode SHOULD be used if node functions in resource restricted environment,
 whereas `core` SHOULD be used if node has no strong hardware or bandwidth restrictions.
 
-## Send messages
+### Messaging
 
-#### Type definitions
+#### Messaging type definitions
 
 ```yaml
 types:
+
   MessageEnvelope:
     type: object
     fields:
@@ -333,44 +361,20 @@ types:
         description: "Content-based filtering field as defined in [TOPICS](https://github.com/vacp2p/rfc-index/blob/main/waku/informational/23/topics.md#content-topics)"
       payload:
         type: array<byte>
-        description: "The message data to be sent."
+        description: "The message data."
       ephemeral:
         type: bool
         default: false
         description: "Whether the message is ephemeral. Read at [ATTRIBUTES](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/14/message.md#message-attributes)"
 
-  RequestId:
-    type: string
-    description: "A unique identifier for a request"
-```
-
-#### Function definitions
-
-```yaml
-functions:
-  send:
-    description: "Send a message through the network."
-    parameters:
-      - name: message
+  MessageReceivedEvent:
+    type: object
+    description: "Event emitted when a message is received from the network"
+    fields:
+      message:
         type: MessageEnvelope
-        description: "Parameters for sending the message."
-    returns:
-      type: result<RequestId, error>
-```
+        description: "The received message's payload and metadata"
 
-#### Extended definitions
-
-A first `message` sent with a certain `contentTopic`
-SHOULD trigger a subscription based on `Subscribe to messages` section for such `contentTopic`.
-
-The node uses [P2P-RELIABILITY](/standards/application/p2p-reliability.md) strategies to ensure message delivery.
-
-## Event source
-
-#### Type definitions
-
-```yml
-types:
   MessageSentEvent:
     type: object
     description: "Event emitted when a message is sent to the network"
@@ -382,7 +386,7 @@ types:
         type: string
         description: "Hash of the message that got sent to the network"
 
-  MessageErrorEvent:
+  MessageSendErrorEvent:
     type: object
     description: "Event emitted when a message send operation fails"
     fields:
@@ -396,7 +400,7 @@ types:
         type: string
         description: "Error message describing what went wrong"
 
-  MessagePropagatedEvent:
+  MessageSendPropagatedEvent:
     type: object
     description: "Confirmation that a message has been correctly delivered to some neighbouring nodes."
     fields:
@@ -411,38 +415,139 @@ types:
     type: event_emitter
     description: "Event source for message-related events"
     events:
+      "message:received":
+        type: MessageReceivedEvent
       "message:sent":
         type: MessageSentEvent
-      "message:error":
-        type: MessageErrorEvent
-      "message:propagated":
-        type: MessagePropagatedEvent
+      "message:send-error":
+        type: MessageSendErrorEvent
+      "message:send-propagated":
+        type: MessageSendPropagatedEvent
 ```
 
-## The Validation API
+#### Messaging function definitions
 
-[WAKU2-RLN-RELAY](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/17/rln-relay.md) is currently the primary message validation mechanism in place.
+```yaml
+functions:
 
-Work is scheduled to specify a validate API to enable plug-in validation.
-As part of this API, it will be expected that a validation object can be passed,
-that would contain all validation parameters including RLN.
+  send:
+    description: "Send a message through the network."
+    parameters:
+      - name: message
+        type: MessageEnvelope
+        description: "Parameters for sending the message."
+    returns:
+      type: result<RequestId, error>
+```
 
-In the time being, parameters specific to RLN are accepted for the message validation.
-RLN can also be disabled.
+#### Messaging extended definitions
 
-## Connection Status
+A first `message` sent with a certain `contentTopic` SHOULD trigger a subscription for such `contentTopic` as described in the `Subscriptions` section.
 
-#### Type definitions
+The node uses [P2P-RELIABILITY](/standards/application/p2p-reliability.md) strategies to ensure message delivery.
+
+### Subscriptions
+
+#### Subscriptions type definitions
+
+```yaml
+types:
+
+  SubscriptionError:
+    type: object
+    description: "A content topic subscription-related operation failed synchronously and irremediably"
+    fields:
+      content-topic:
+        type: string
+        description: "Content topic that the node failed to subscribe to or unsubscribe from"
+      error:
+        type: string
+        description: "Error message describing what went wrong"
+```
+
+#### Subscriptions function definitions
+
+```yaml
+functions:
+
+  subscribe:
+    description: "Subscribe to specific content topics"
+    parameters:
+      - name: contentTopics
+        type: Array<string>
+        description: "The content topics for the node to subscribe to."
+    returns:
+        type: result<void, array<SubscriptionError>>
+
+  unsubscribe:
+    description: "Unsubscribe from specific content topics"
+    parameters:
+      - name: contentTopics
+        type: Array<ContentTopic>
+        description: "The content topics for the node to unsubscribe from."
+    returns:
+        type: result<void, array<SubscriptionError>>
+```
+
+#### Subscriptions extended definitions
+
+**`mode`**:
+
+If the `mode` set is `edge`, `subscribe` SHOULD trigger set up a subscription using [FILTER](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/12/filter.md) as client and [P2P-RELIABILITY](/standards/application/p2p-reliability.md).
+
+If the `mode` set is `core`, `subscribe` SHOULD trigger set up a subscription using [RELAY](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/11/relay.md) and [P2P-RELIABILITY](/standards/application/p2p-reliability.md).
+This MAY trigger joining a new shard if not already set.
+
+Only messages on subscribed content topics SHOULD be emitted by a `MessageEvents` event source, meaning messages received via `RELAY` SHOULD be filtered by content topics before emission.
+
+**`error`**:
+
+Only irremediable failures should lead to synchronously returning a subscription error for failed subscribe or unsubscribe operations.
+
+Failure to reach nodes can be omitted, and should be handled via the health events;
+[P2P-RELIABILITY](/standards/application/p2p-reliability.md) SHOULD handle automated re-subscriptions and redundancy.
+
+Examples of irremediable failures are:
+
+- Invalid content topic format
+- Exceeding number of content topics
+- Node not started
+- Already unsubscribed
+- Other node-level configuration issue
+
+### Health
+
+#### Health type definitions
 
 ```yml
 types:
+
   ConnectionStatus:
     type: enum
     values: [Disconnected, PartiallyConnected, Connected]
     description: "Used to identify health of the operating node"
+
+  HealthConnectionStatusEvent:
+    type: object
+    description: "Event emitted when the overall node health status changes"
+    fields:
+      connection-status:
+        type: ConnectionStatus
+        description: "The node's new connection status"
+
+  HealthEvents:
+    type: event_emitter
+    description: "Event source for health-related events."
+    events:
+      "health:connection-status":
+        type: HealthConnectionStatusEvent
 ```
 
-#### Extended definitions
+#### Health function definitions
+
+TODO
+
+#### Health extended definitions
 
 `Disconnected` indicates that the node has lost connectivity for message reception,
 sending, or both, and as a result, it cannot reliably receive or transmit messages.
@@ -456,34 +561,16 @@ although performance or reliability may still be impacted.
 `Connected` indicates that the node is operating optimally,
 with full support for message reception and transmission.
 
-## Event Source
+## The Validation API
 
-#### Type definitions
+[WAKU2-RLN-RELAY](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/17/rln-relay.md) is currently the primary message validation mechanism in place.
 
-```yaml
-types:
-  ConnectionStatusEvent:
-    type: object
-    fields:
-      eventType:
-        type: string
-        default: "health"
-        description: "Event type identifier"
-      status:
-        type: ConnectionStatus
-        description: "Node connection status emitted on state change"
+Work is scheduled to specify a validate API to enable plug-in validation.
+As part of this API, it will be expected that a validation object can be passed,
+that would contain all validation parameters including RLN.
 
-EventSource:
-  type: object
-  description: "Event source for Waku API events"
-  fields:
-    onEvent:
-      type: function
-      description: "Callback for captured events"
-      parameters:
-        - name: event
-          type: ConnectionStatusEvent
-```
+In the time being, parameters specific to RLN are accepted for the message validation.
+RLN can also be disabled.
 
 ## Security/Privacy Considerations
 
