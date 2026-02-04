@@ -463,13 +463,6 @@ types:
       error:
         type: string
         description: "Error message describing what went wrong"
-
-  SubscriptionEvents:
-    type: event_emitter
-    description: "Event source for subscription-related events."
-    events:
-      "subscription:error":
-        type: SubscriptionErrorEvent
 ```
 
 #### Subscriptions function definitions
@@ -509,7 +502,7 @@ Only messages on subscribed content topics SHOULD be emitted by a `MessageEvents
 
 **`error`**:
 
-Only irremediable failures should lead to emitting a `"subscription:error"` for failed subscribe or unsubscribe operations.
+Only irremediable failures should lead to synchronously returning a subscription error for failed subscribe or unsubscribe operations.
 
 Failure to reach nodes can be omitted, and should be handled via the health events;
 [P2P-RELIABILITY](/standards/application/p2p-reliability.md) SHOULD handle automated re-subscriptions and redundancy.

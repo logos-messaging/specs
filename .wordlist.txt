@@ -95,10 +95,7 @@ rpc
 SHARDING
 sharding
 subnets
-SubscribeAction
-SubscriptionErrorEvent
-subscriptionEvents
-SubscriptionEvents
+SubscriptionError
 TBD
 tcp
 TCP
