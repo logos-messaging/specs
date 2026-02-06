@@ -31,7 +31,7 @@ The chat protocol is be decomposed into 3 distinct phases.
 
 and transport details are divided into:
 
-- **Delivery Service:** How are payloads are routed and delivered to a client.
+- **Delivery Service:** How are payloads routed and delivered to a client.
 - **Framing Strategy:** How are payloads encoded.
 
 Defining these 5 parameters allows for chat protocol implementations to be fully defined, which allows clients from different applications to exchange messages.
