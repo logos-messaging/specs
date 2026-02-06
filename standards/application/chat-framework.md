@@ -54,7 +54,7 @@ A Delivery Service (DS) is the service or method that distributes payloads to cl
 
 In this protocol framework, payloads from multiple protocols are potentially multiplexed over the same channel. This requires that clients are able to associate a given payload to a given instance of a protocol. 
 
-A framing strategy should define a common payload type as well as a method to determine which state machine a receiving client must used to decode it.
+A framing strategy should define a common payload type as well as a method to determine which state machine a receiving client must use to decode it.
 
 
 ## Protocol Components
