@@ -103,7 +103,7 @@ The output requirements of the discovery protocol are very implementation specif
 
 - The discovery protocol MUST provide all data required for the initialization protocol.
 
-Note: There is no requirement that the Discovery protocol be a complicated nor interactive process. Hypothetically If all required values to construct a IntroductionBundle could be statically defined, that would be sufficient for this definition.
+Note: There is no requirement that the Discovery protocol be neither a complicated nor interactive process. Hypothetically If all required values to construct a IntroductionBundle could be statically defined, that would be sufficient for this definition.
 
 ### Initialization Protocol
 
