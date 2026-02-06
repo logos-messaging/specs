@@ -20,7 +20,7 @@ With the vast amount of information required to maintain compatibility between a
 
 # Theory / Semantics
 
-This specification defines a abstract framework for building a chat protocol. Its purpose is to name the components, and define modular boundaries between components to promote reuse. The end result is that a chat protocol implementation can be described by listing its approach to 5 problem areas.
+This specification defines an abstract framework for building a chat protocol. Its purpose is to name the components, and define modular boundaries between components to promote reuse. The end result is that a chat protocol implementation can be described by listing its approach to 5 problem areas.
 
 
 The chat protocol is be decomposed into 3 distinct phases.
