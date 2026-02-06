@@ -113,7 +113,7 @@ The core of an initialization protocol is a defined location and procedure for r
 
 Many chat protocols choose to define the initialization protocol within the conversation protocol. This tight coupling produces two negative artifacts. 
 - New conversation protocols must define and deploy there own initialization channels. Increasing overhead and adding complexity.
-- New protocol upgrades then create partitions in the communication network, as older clients have no means of communicating with new clients.
+- Protocol upgrades then create partitions in the communication network, as older clients have no means of communicating with new clients.
 
 Separating channel initialization from conversation flow allows multiple conversations to reuse the same initialization channel. This reduces effort for new conversation protocols, and is especially valuable when upgrading existing ones. Being independent the initialization pathway can persist across conversation versions. Even if an older client cannot parse new message types, it can still recognize their presence, adding observability. 
 
