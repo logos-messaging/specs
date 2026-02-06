@@ -44,7 +44,7 @@ A Delivery Service (DS) is the service or method that distributes payloads to cl
 
 #### Requirements
 
-- -A DS MUST provide a method for clients to subscribe to messages from a delivery_address
+- A DS MUST provide a method for clients to subscribe to messages from a delivery_address
 - Payloads sent to a delivery_address are delivered by a DS to all subscribers of that delivery_address
 - A DS MAY NOT guarantee message delivery
 - A DS MAY NOT guarantee message ordering
