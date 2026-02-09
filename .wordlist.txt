@@ -23,9 +23,12 @@ centric
 Changelog
 channelConfig
 channelId
+chatintro
 ciphertext
+CLI
 closeChannel
 config
+confusable
 ConnectionStatus
 ConnectionStatusEvent
 ContentFrame
@@ -104,6 +107,7 @@ implementors
 Implementors
 Inclusivity
 Init
+IntroBundle
 IPersistence
 ipv
 iterable
@@ -158,8 +162,10 @@ onMessageSent
 OpenAPI
 openChannel
 parityRate
+Parsers
 PartiallyConnected
 PascalCase
+Patryk
 Pax
 permissionless
 plaintext
@@ -171,6 +177,7 @@ Prem
 proto
 protobuf
 ProtocolsConfig
+pubkey
 pubsub
 rateLimitConfig
 RateLimitConfig
@@ -245,6 +252,8 @@ uint
 uint
 unencrypted
 unvalidated
+url
+UTF
 UUID
 UX
 waku
@@ -256,6 +265,7 @@ Waku's
 WakuNode
 www
 xB
+XEdDSA
 yaml
 YAML
 yml
