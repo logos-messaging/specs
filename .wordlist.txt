@@ -8,6 +8,7 @@ AutoShardingConfig
 bool
 camelCase
 cd
+centric
 config
 ConnectionStatus
 ConnectionStatusEvent
@@ -48,9 +49,11 @@ iana
 IANA
 IDL
 implementor
+Inclusivity
 Init
 ipv
 iterable
+Jazzz
 KiB
 Kozlov
 libp
@@ -87,7 +90,9 @@ ProtocolsConfig
 pubsub
 pubsub
 Raya
+Raya's
 RequestId
+responder
 rfc
 rfc
 RFC
