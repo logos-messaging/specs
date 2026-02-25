@@ -561,6 +561,27 @@ although performance or reliability may still be impacted.
 `Connected` indicates that the node is operating optimally,
 with full support for message reception and transmission.
 
+### Debug
+
+#### Debug function definitions
+
+```yaml
+functions:
+  getAvailableNodeInfoIds:
+    description: "Returns a list of available node information identifiers. e.g., [ version, my_peer_id, metrics ]."
+    returns:
+      type: result<array<string>, error>
+
+  getNodeInfo:
+    description: "Returns the node's information that is requested"
+    parameters:
+      - name: nodeInfoId
+        type: string
+        description: "Information identifier. The only supported values are the ones returned by getAvailableNodeInfoItems function"
+    returns:
+      type: result<string, error>
+```
+
 ## The Validation API
 
 [WAKU2-RLN-RELAY](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/17/rln-relay.md) is currently the primary message validation mechanism in place.
