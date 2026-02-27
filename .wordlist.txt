@@ -36,6 +36,7 @@ EventSource
 eventType
 fb
 fBF
+getAvailableConfigs
 getAvailableNodeInfoItems
 getMerkleRoot
 getNodeInfo
@@ -56,6 +57,7 @@ Init
 ipv
 iterable
 Jazzz
+JSON
 KiB
 Kozlov
 libp
