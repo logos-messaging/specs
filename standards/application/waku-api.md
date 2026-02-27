@@ -573,13 +573,18 @@ functions:
       type: result<array<string>, error>
 
   getNodeInfo:
-    description: "Returns the node's information that is requested"
+    description: "Returns the node's information that is requested."
     parameters:
       - name: nodeInfoId
         type: string
-        description: "Information identifier. The only supported values are the ones returned by getAvailableNodeInfoItems function"
+        description: "Information identifier. The only supported values are the ones returned by getAvailableNodeInfoItems function."
     returns:
       type: result<string, error>
+
+  getAvailableConfigs:
+    description: "Returns a list of all available options, their description and default values."
+    returns:
+      type: string
 ```
 
 ## The Validation API
