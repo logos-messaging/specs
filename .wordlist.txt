@@ -36,7 +36,11 @@ EventSource
 eventType
 fb
 fBF
+getAvailableConfigs
+getAvailableNodeInfoIds
+getAvailableNodeInfoItems
 getMerkleRoot
+getNodeInfo
 github
 GITHUB
 gossipsub
@@ -54,6 +58,7 @@ Init
 ipv
 iterable
 Jazzz
+JSON
 KiB
 Kozlov
 libp
@@ -76,6 +81,7 @@ NetworkingConfig
 nim
 nodeConfig
 NodeConfig
+nodeInfoId
 num
 Oleksandr
 onEvent
