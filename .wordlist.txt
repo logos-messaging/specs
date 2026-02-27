@@ -36,7 +36,9 @@ EventSource
 eventType
 fb
 fBF
+getAvailableNodeInfoItems
 getMerkleRoot
+getNodeInfo
 github
 GITHUB
 gossipsub
@@ -76,6 +78,7 @@ NetworkingConfig
 nim
 nodeConfig
 NodeConfig
+nodeInfoId
 num
 Oleksandr
 onEvent
