@@ -573,7 +573,7 @@ functions:
       type: result<array<string>, error>
 
   getNodeInfo:
-    description: "Returns the node's information that is requested."
+    description: "Returns the JSON formatted node's information that is requested. Expect single value or list results depending on requested information."
     parameters:
       - name: nodeInfoId
         type: string
