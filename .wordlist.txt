@@ -37,6 +37,7 @@ eventType
 fb
 fBF
 getAvailableConfigs
+getAvailableNodeInfoIds
 getAvailableNodeInfoItems
 getMerkleRoot
 getNodeInfo
