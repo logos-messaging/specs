@@ -37,8 +37,6 @@ Terms are organized into the following categories for clarity and ease of refere
 
 ## Definitions
 
-### Accounts + Identity
-
 ### Roles
 
 **Sender**: A client which is pushing a payload on to the network, to one or more recipients.
