@@ -24,11 +24,25 @@ contributors:
     * [Language mappings](#language-mappings)
     * [Application](#application)
   * [The Waku API](#the-waku-api)
-    * [Initialise Waku node](#initialise-waku-node)
-      * [Type definitions](#type-definitions)
-      * [Function definitions](#function-definitions)
-      * [Predefined values](#predefined-values)
-      * [Extended definitions](#extended-definitions)
+    * [Common](#common)
+      * [Common type definitions](#common-type-definitions)
+    * [Init node](#init-node)
+      * [Init node type definitions](#init-node-type-definitions)
+      * [Init node function definitions](#init-node-function-definitions)
+      * [Init node predefined values](#init-node-predefined-values)
+      * [Init node extended definitions](#init-node-extended-definitions)
+    * [Messaging](#messaging)
+      * [Messaging type definitions](#messaging-type-definitions)
+      * [Messaging function definitions](#messaging-function-definitions)
+      * [Messaging extended definitions](#messaging-extended-definitions)
+    * [Subscriptions](#subscriptions)
+      * [Subscriptions type definitions](#subscriptions-type-definitions)
+      * [Subscriptions function definitions](#subscriptions-function-definitions)
+      * [Subscriptions extended definitions](#subscriptions-extended-definitions)
+    * [Health](#health)
+      * [Health type definitions](#health-type-definitions)
+      * [Health function definitions](#health-function-definitions)
+      * [Health extended definitions](#health-extended-definitions)
   * [The Validation API](#the-validation-api)
   * [Security/Privacy Considerations](#securityprivacy-considerations)
   * [Copyright](#copyright)
@@ -39,10 +53,10 @@ contributors:
 This document specifies an Application Programming Interface (API) that is RECOMMENDED for developers of the [WAKU2](https://github.com/vacp2p/rfc-index/blob/7b443c1aab627894e3f22f5adfbb93f4c4eac4f6/waku/standards/core/10/waku2.md) clients to implement,
 and for consumers to use as a single entry point to its functionalities.
 
-This API defines the RECOMMENDED interface for leveraging Waku protocols to send and receive messages. 
+This API defines the RECOMMENDED interface for leveraging Waku protocols to send and receive messages.
 Application developers SHOULD use it to access capabilities for peer discovery, message routing, and peer-to-peer reliability.
 
-TODO: This spec must be further extended to include connection health inspection, message sending, subscription and store hash queries.
+TODO: This spec must be further extended to include connection health inspection, subscription, and store hash queries.
 
 ## Motivation
 
@@ -69,12 +83,13 @@ An alternative would be to choose a programming language. However, such choice m
 ### Primitive types and general guidelines
 
 - No `default` means that the value is mandatory, meaning a `default` value implies an optional parameter.
-- Primitive types are `string`, `int`, `bool`, `enum` and `uint`
+- Primitive types are `string`, `int`, `bool`, `byte`, `enum` and `uint`
 - Complex pre-defined types are:
   - `object`: object and other nested types.
-  - `array`: iterable object containing values of all the same type.
+  - `array`: iterable object containing values of all the same type. Syntax: `array<T>` where `T` is the element type (e.g., `array<string>`, `array<byte>`).
   - `result`: an enum type that either contains a value or void (success), or an error (failure); The error is left to the implementor.
   - `error`: Left to the implementor on whether `error` types are `string` or `object` in the given language.
+  - `event_emitter`: an object that emits events with specific event names and associated event data types.
 - Usage of `result` is RECOMMENDED, usage of exceptions is NOT RECOMMENDED, no matter the language.
 
 TODO: Review whether to specify categories of errors.
@@ -90,11 +105,13 @@ language_mappings:
       - functions: "camelCase"
       - variables: "camelCase"
       - types: "PascalCase"
+    event_emitter: "Use EventEmitter object with `emit`, `addListener`, etc; with event name the string specified in IDL. For example. eventEmitter.emit('message:sent',...)"
   nim:
     naming_convention:
       - functions: "camelCase"
       - variables: "camelCase"
       - types: "PascalCase"
+    event_emitter: TBD
 ```
 
 ### Application
@@ -109,15 +126,39 @@ library_name: "waku"
 description: "Waku: a private and censorship-resistant message routing library."
 ```
 
-### Initialise Waku node
+### Common
 
-#### Type definitions
+This section describes common types used throughout the API.
+
+Note that all types in the API are described once in this document, in a single section. Types should just forward-reference other types when needed.
+
+#### Common type definitions
 
 ```yaml
 types:
+
   WakuNode:
     type: object
     description: "A Waku node instance."
+    fields:
+      messageEvents:
+        type: MessageEvents
+        description: "The node's messaging event emitter"
+      healthEvents:
+        type: HealthEvents
+        description: "The node's health monitoring event emitter"
+
+  RequestId:
+    type: string
+    description: "A unique identifier for a request"
+```
+
+### Init node
+
+#### Init node type definitions
+
+```yaml
+types:
 
   NodeConfig:
     type: object
@@ -151,6 +192,7 @@ types:
         description: "The passed nodes are prioritised for store queries."
       cluster_id:
         type: uint
+        description: "The cluster ID for the Waku network. Cluster IDs are defined in [RELAY-SHARDING](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/51/relay-sharding.md) and allocated in [RELAY-STATIC-SHARD-ALLOC](https://github.com/waku-org/specs/blob/master/informational/relay-static-shard-alloc.md)."
       auto_sharding_config:
         type: AutoShardingConfig
         default: DefaultAutoShardingConfig
@@ -201,19 +243,20 @@ types:
     fields:
       contract_address:
         type: string
-        description: "The address of the RLN contract exposes `root` and `getMerkleRoot` ABIs"
+        description: "The address of the RLN contract that exposes `root` and `getMerkleRoot` ABIs"
       chain_id:
         type: uint
-        description: "The chain id on which the RLN contract is deployed"
+        description: "The chain ID on which the RLN contract is deployed"
       epoch_size_sec:
         type: uint
         description: "The epoch size to use for RLN, in seconds"
 ```
 
-#### Function definitions
+#### Init node function definitions
 
 ```yaml
 functions:
+
   createNode:
     description: "Initialise a Waku node instance"
     parameters:
@@ -224,7 +267,7 @@ functions:
         type: result<WakuNode, error>
 ```
 
-#### Predefined values
+#### Init node predefined values
 
 ```yaml
 values:
@@ -244,6 +287,7 @@ values:
       static_store_nodes: []
       cluster_id: 1
       auto_sharding_config:
+        type: AutoShardingConfig
         fields:
           num_shards_in_cluster: 8
       message_validation: TheWakuNetworkMessageValidation
@@ -253,6 +297,7 @@ values:
     fields:
       max_message_size: "150 KiB"
       rln_config:
+        type: RlnConfig
         fields:
           contract_address: "0xB9cd878C90E49F797B4431fBF4fb333108CB90e6"
           chain_id: 59141
@@ -273,7 +318,7 @@ values:
       rln_config: none
 ```
 
-#### Extended definitions
+#### Init node extended definitions
 
 **`mode`**:
 
@@ -291,7 +336,6 @@ If the `mode` set is `core`, the initialised `WakuNode` SHOULD use:
 - [RELAY](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/11/relay.md)
 - [LIGHTPUSH](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/19/lightpush.md) as service node
 - [FILTER](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/12/filter.md) as service node
-- [PEER-EXCHANGE](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/34/peer-exchange.md) as service node
 - [STORE](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/13/store.md) as client
 - [METADATA](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/66/metadata.md) as client and service node
 - [P2P-RELIABILITY](/standards/application/p2p-reliability.md)
@@ -301,6 +345,247 @@ If the `mode` set is `core`, the initialised `WakuNode` SHOULD use:
 
 `edge` mode SHOULD be used if node functions in resource restricted environment,
 whereas `core` SHOULD be used if node has no strong hardware or bandwidth restrictions.
+
+### Messaging
+
+#### Messaging type definitions
+
+```yaml
+types:
+
+  MessageEnvelope:
+    type: object
+    fields:
+      content_topic:
+        type: string
+        description: "Content-based filtering field as defined in [TOPICS](https://github.com/vacp2p/rfc-index/blob/main/waku/informational/23/topics.md#content-topics)"
+      payload:
+        type: array<byte>
+        description: "The message data."
+      ephemeral:
+        type: bool
+        default: false
+        description: "Whether the message is ephemeral. Read at [ATTRIBUTES](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/14/message.md#message-attributes)"
+
+  MessageReceivedEvent:
+    type: object
+    description: "Event emitted when a message is received from the network"
+    fields:
+      message:
+        type: MessageEnvelope
+        description: "The received message's payload and metadata"
+
+  MessageSentEvent:
+    type: object
+    description: "Event emitted when a message is sent to the network"
+    fields:
+      request_id:
+        type: RequestId
+        description: "The request ID associated with the sent message"
+      message_hash:
+        type: string
+        description: "Hash of the message that got sent to the network"
+
+  MessageSendErrorEvent:
+    type: object
+    description: "Event emitted when a message send operation fails"
+    fields:
+      request_id:
+        type: RequestId
+        description: "The request ID associated with the failed message"
+      message_hash:
+        type: string
+        description: "Optional property. Hash of the message that got error"
+      error:
+        type: string
+        description: "Error message describing what went wrong"
+
+  MessageSendPropagatedEvent:
+    type: object
+    description: "Confirmation that a message has been correctly delivered to some neighbouring nodes."
+    fields:
+      request_id:
+        type: RequestId
+        description: "The request ID associated with the propagated message in the network"
+      message_hash:
+        type: string
+        description: "Hash of the message that got propagated within the network"
+
+  MessageEvents:
+    type: event_emitter
+    description: "Event source for message-related events"
+    events:
+      "message:received":
+        type: MessageReceivedEvent
+      "message:sent":
+        type: MessageSentEvent
+      "message:send-error":
+        type: MessageSendErrorEvent
+      "message:send-propagated":
+        type: MessageSendPropagatedEvent
+```
+
+#### Messaging function definitions
+
+```yaml
+functions:
+
+  send:
+    description: "Send a message through the network."
+    parameters:
+      - name: message
+        type: MessageEnvelope
+        description: "Parameters for sending the message."
+    returns:
+      type: result<RequestId, error>
+```
+
+#### Messaging extended definitions
+
+A first `message` sent with a certain `contentTopic` SHOULD trigger a subscription for such `contentTopic` as described in the `Subscriptions` section.
+
+The node uses [P2P-RELIABILITY](/standards/application/p2p-reliability.md) strategies to ensure message delivery.
+
+### Subscriptions
+
+#### Subscriptions type definitions
+
+```yaml
+types:
+
+  SubscriptionError:
+    type: object
+    description: "A content topic subscription-related operation failed synchronously and irremediably"
+    fields:
+      content-topic:
+        type: string
+        description: "Content topic that the node failed to subscribe to or unsubscribe from"
+      error:
+        type: string
+        description: "Error message describing what went wrong"
+```
+
+#### Subscriptions function definitions
+
+```yaml
+functions:
+
+  subscribe:
+    description: "Subscribe to specific content topics"
+    parameters:
+      - name: contentTopics
+        type: Array<string>
+        description: "The content topics for the node to subscribe to."
+    returns:
+        type: result<void, array<SubscriptionError>>
+
+  unsubscribe:
+    description: "Unsubscribe from specific content topics"
+    parameters:
+      - name: contentTopics
+        type: Array<ContentTopic>
+        description: "The content topics for the node to unsubscribe from."
+    returns:
+        type: result<void, array<SubscriptionError>>
+```
+
+#### Subscriptions extended definitions
+
+**`mode`**:
+
+If the `mode` set is `edge`, `subscribe` SHOULD trigger set up a subscription using [FILTER](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/12/filter.md) as client and [P2P-RELIABILITY](/standards/application/p2p-reliability.md).
+
+If the `mode` set is `core`, `subscribe` SHOULD trigger set up a subscription using [RELAY](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/11/relay.md) and [P2P-RELIABILITY](/standards/application/p2p-reliability.md).
+This MAY trigger joining a new shard if not already set.
+
+Only messages on subscribed content topics SHOULD be emitted by a `MessageEvents` event source, meaning messages received via `RELAY` SHOULD be filtered by content topics before emission.
+
+**`error`**:
+
+Only irremediable failures should lead to synchronously returning a subscription error for failed subscribe or unsubscribe operations.
+
+Failure to reach nodes can be omitted, and should be handled via the health events;
+[P2P-RELIABILITY](/standards/application/p2p-reliability.md) SHOULD handle automated re-subscriptions and redundancy.
+
+Examples of irremediable failures are:
+
+- Invalid content topic format
+- Exceeding number of content topics
+- Node not started
+- Already unsubscribed
+- Other node-level configuration issue
+
+### Health
+
+#### Health type definitions
+
+```yml
+types:
+
+  ConnectionStatus:
+    type: enum
+    values: [Disconnected, PartiallyConnected, Connected]
+    description: "Used to identify health of the operating node"
+
+  HealthConnectionStatusEvent:
+    type: object
+    description: "Event emitted when the overall node health status changes"
+    fields:
+      connection-status:
+        type: ConnectionStatus
+        description: "The node's new connection status"
+
+  HealthEvents:
+    type: event_emitter
+    description: "Event source for health-related events."
+    events:
+      "health:connection-status":
+        type: HealthConnectionStatusEvent
+```
+
+#### Health function definitions
+
+TODO
+
+#### Health extended definitions
+
+`Disconnected` indicates that the node has lost connectivity for message reception,
+sending, or both, and as a result, it cannot reliably receive or transmit messages.
+
+`PartiallyConnected` indicates that the node meets the minimum operational requirements:
+it is connected to at least one peer with a protocol to send messages ([LIGHTPUSH](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/19/lightpush.md) or [RELAY](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/11/relay.md)), 
+one peer with a protocol to receive messages ([FILTER](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/12/filter.md) or [RELAY](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/11/relay.md)),
+and one peer with [STORE](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/13/store.md) service capabilities,
+although performance or reliability may still be impacted.
+
+`Connected` indicates that the node is operating optimally,
+with full support for message reception and transmission.
+
+### Debug
+
+#### Debug function definitions
+
+```yaml
+functions:
+  getAvailableNodeInfoIds:
+    description: "Returns a list of available node information identifiers. e.g., [ version, my_peer_id, metrics ]."
+    returns:
+      type: result<array<string>, error>
+
+  getNodeInfo:
+    description: "Returns the JSON formatted node's information that is requested. Expect single value or list results depending on requested information."
+    parameters:
+      - name: nodeInfoId
+        type: string
+        description: "Information identifier. The only supported values are the ones returned by getAvailableNodeInfoItems function."
+    returns:
+      type: result<string, error>
+
+  getAvailableConfigs:
+    description: "Returns a list of all available options, their description and default values."
+    returns:
+      type: string
+```
 
 ## The Validation API
 
