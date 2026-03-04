@@ -33,6 +33,7 @@ Terms are organized into the following categories for clarity and ease of refere
 - **Roles**: Defined entity types that determine how a participant behaves within a communication protocol.
 - **Message Types**: Classifications and categories of protocol messages
 - **Transports**: Abstract methods of transmitting payloads
+-**Software Entities**: Distinct software-defined actors or components that participate in the operation of ChatProtocols
 
 ## Definitions
 
@@ -61,7 +62,7 @@ Other specific message types include:
 
 **Content Type**: The structured format of content. These data structures represent specific encodings of Text, Image, Audio data. 
 
-**Delivery Acknowledgement**: A notification from a receiving client to sender that their message was successfully received. While similar to a read-receipt delivery acknowledgements differ in that the acknowledgement originates based on the client, where read-receipts are fired when they are displayed to a user.
+**Delivery Acknowledgement**: A notification from a receiving client to sender that their message was successfully received. While similar to a read-receipt, delivery acknowledgements differ in that the acknowledgement originates based on the client, where read-receipts are fired when they are displayed to a user.
 
 **Invite**: A frame used to initialize a new conversation. Invites notify a client that someone wants to communicate with them, and provides the required information to do so.
 
