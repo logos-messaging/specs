@@ -190,7 +190,7 @@ types:
         description: "The passed nodes are prioritised for store queries."
       cluster_id:
         type: uint
-        description: "The cluster ID for the network. Cluster IDs are defined in [RELAY-SHARDING](https://github.com/logos-messaging/specs/blob/master/standards/core/relay-sharding.md) and allocated in [RELAY-STATIC-SHARD-ALLOC](https://github.com/waku-org/specs/blob/master/informational/relay-static-shard-alloc.md)."
+        description: "The cluster ID for the network. Cluster IDs are defined in [RELAY-SHARDING](https://github.com/logos-messaging/specs/blob/master/standards/core/relay-sharding.md) and allocated in [RELAY-STATIC-SHARD-ALLOC](https://github.com/logos-messaging/specs/blob/master/informational/relay-static-shard-alloc.md)."
       auto_sharding_config:
         type: AutoShardingConfig
         default: DefaultAutoShardingConfig
@@ -339,7 +339,7 @@ If the `mode` set is `core`, the initialised `WakuNode` SHOULD use:
 - [P2P-RELIABILITY](/standards/application/p2p-reliability.md)
 - [DISCV5](https://lip.logos.co/messaging/standards/core/33/discv5.html)
 - [PEER-EXCHANGE](https://lip.logos.co/messaging/standards/core/34/peer-exchange.html) as client and service node
-- [RENDEZVOUS](https://github.com/waku-org/specs/blob/master/standards/core/rendezvous.md) as client and service node
+- [RENDEZVOUS](https://github.com/logos-messaging/specs/blob/master/standards/core/rendezvous.md) as client and service node
 
 `edge` mode SHOULD be used if node functions in resource restricted environment,
 whereas `core` SHOULD be used if node has no strong hardware or bandwidth restrictions.
@@ -598,7 +598,7 @@ RLN can also be disabled.
 
 ## Security/Privacy Considerations
 
-See [WAKU2-ADVERSARIAL-MODELS](https://github.com/waku-org/specs/blob/master/informational/adversarial-models.md).
+See [WAKU2-ADVERSARIAL-MODELS](https://github.com/logos-messaging/specs/blob/master/informational/adversarial-models.md).
 
 ## Copyright
 
