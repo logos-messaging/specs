@@ -61,6 +61,7 @@ Jazzz
 JSON
 KiB
 Kozlov
+liblogosdelivery
 libp
 libp2p
 LIGHTPUSH
