@@ -1,6 +1,6 @@
 ---
-title: WAKU-API
-name: Waku API definition
+title: MESSAGING-API
+name: Messaging API definition
 category: Standards Track
 status: raw
 tags: [reliability, application, api, protocol composition]
@@ -23,7 +23,7 @@ contributors:
     * [Primitive types and general guidelines](#primitive-types-and-general-guidelines)
     * [Language mappings](#language-mappings)
     * [Application](#application)
-  * [The Waku API](#the-waku-api)
+  * [The Messaging API](#the-messaging-api)
     * [Common](#common)
       * [Common type definitions](#common-type-definitions)
     * [Init node](#init-node)
@@ -53,17 +53,15 @@ contributors:
 This document specifies an Application Programming Interface (API) that is RECOMMENDED for developers of the [WAKU2](https://github.com/vacp2p/rfc-index/blob/7b443c1aab627894e3f22f5adfbb93f4c4eac4f6/waku/standards/core/10/waku2.md) clients to implement,
 and for consumers to use as a single entry point to its functionalities.
 
-This API defines the RECOMMENDED interface for leveraging Waku protocols to send and receive messages.
+This API defines the RECOMMENDED interface for leveraging Logos Messaging protocols to send and receive messages.
 Application developers SHOULD use it to access capabilities for peer discovery, message routing, and peer-to-peer reliability.
-
-TODO: This spec must be further extended to include connection health inspection, subscription, and store hash queries.
 
 ## Motivation
 
-The accessibility of Waku protocols is capped by the accessibility of their implementations, and hence API.
+The accessibility of Logos Messaging protocols is capped by the accessibility of their implementations, and hence API.
 This RFC enables a concerted effort to draft an API that is simple and accessible, and provides an opinion on sane defaults.
 
-The API defined in this document is an opinionated-by-purpose method to use the more agnostic [WAKU2](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/10/waku2.md) protocols.
+The API defined in this document is an opinionated-by-purpose method to use the more agnostic [WAKU2](https://lip.logos.co/messaging/standards/core/10/waku2.html) protocols.
 
 ## Syntax
 
@@ -74,7 +72,7 @@ The keywords “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL N
 
 ### IDL
 
-A custom Interface Definition Language (IDL) in YAML is used to define the Waku API.
+A custom Interface Definition Language (IDL) in YAML is used to define the Messaging API.
 Existing IDL Such as OpenAPI, AsyncAPI or WIT do not exactly fit the requirements for this API.
 Hence, instead of having the reader learn a new IDL, we propose to use a simple IDL with self-describing syntax.
 
@@ -118,12 +116,12 @@ language_mappings:
 
 This API is designed for generic use and ease across all programming languages, for `edge` and `core` type nodes.
 
-## The Waku API
+## The Messaging API
 
 ```yaml
 api_version: "0.0.1"
-library_name: "waku"
-description: "Waku: a private and censorship-resistant message routing library."
+library_name: "liblogosdelivery"
+description: "Logos Messaging: a private and censorship-resistant message routing library."
 ```
 
 ### Common
@@ -139,7 +137,7 @@ types:
 
   WakuNode:
     type: object
-    description: "A Waku node instance."
+    description: "A node instance."
     fields:
       messageEvents:
         type: MessageEvents
@@ -167,7 +165,7 @@ types:
         type: string
         constraints: [ "edge", "core" ]
         default: "core" # "edge" for mobile and browser devices.
-        description: "The mode of operation of the Waku node; 'edge' of the network: relies on other nodes for message routing; 'core' of the network: fully participate to message routing."
+        description: "The mode of operation of the node; 'edge' of the network: relies on other nodes for message routing; 'core' of the network: fully participate to message routing."
       protocols_config:
         type: ProtocolsConfig
         default: TheWakuNetworkPreset
@@ -192,7 +190,7 @@ types:
         description: "The passed nodes are prioritised for store queries."
       cluster_id:
         type: uint
-        description: "The cluster ID for the Waku network. Cluster IDs are defined in [RELAY-SHARDING](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/51/relay-sharding.md) and allocated in [RELAY-STATIC-SHARD-ALLOC](https://github.com/waku-org/specs/blob/master/informational/relay-static-shard-alloc.md)."
+        description: "The cluster ID for the network. Cluster IDs are defined in [RELAY-SHARDING](https://github.com/logos-messaging/specs/blob/master/standards/core/relay-sharding.md) and allocated in [RELAY-STATIC-SHARD-ALLOC](https://github.com/waku-org/specs/blob/master/informational/relay-static-shard-alloc.md)."
       auto_sharding_config:
         type: AutoShardingConfig
         default: DefaultAutoShardingConfig
@@ -258,11 +256,11 @@ types:
 functions:
 
   createNode:
-    description: "Initialise a Waku node instance"
+    description: "Initialises a node instance"
     parameters:
       - name: nodeConfig
         type: NodeConfig
-        description: "The Waku node configuration."
+        description: "The node configuration."
     returns:
         type: result<WakuNode, error>
 ```
@@ -324,23 +322,23 @@ values:
 
 If the `mode` set is `edge`, the initialised `WakuNode` SHOULD use:
 
-- [LIGHTPUSH](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/19/lightpush.md) as client 
-- [FILTER](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/12/filter.md) as client
-- [STORE](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/13/store.md) as client
-- [METADATA](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/66/metadata.md) as client
-- [PEER-EXCHANGE](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/34/peer-exchange.md) as client
+- [LIGHTPUSH](https://lip.logos.co/messaging/standards/core/19/lightpush.html) as client
+- [FILTER](https://lip.logos.co/messaging/standards/core/12/filter.html) as client
+- [STORE](https://lip.logos.co/messaging/standards/core/13/store.html) as client
+- [METADATA](https://lip.logos.co/messaging/standards/core/66/metadata.html) as client
+- [PEER-EXCHANGE](https://lip.logos.co/messaging/standards/core/34/peer-exchange.html) as client
 - [P2P-RELIABILITY](/standards/application/p2p-reliability.md)
 
 If the `mode` set is `core`, the initialised `WakuNode` SHOULD use:
 
-- [RELAY](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/11/relay.md)
-- [LIGHTPUSH](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/19/lightpush.md) as service node
-- [FILTER](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/12/filter.md) as service node
-- [STORE](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/13/store.md) as client
-- [METADATA](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/66/metadata.md) as client and service node
+- [RELAY](https://lip.logos.co/messaging/standards/core/11/relay.html)
+- [LIGHTPUSH](https://lip.logos.co/messaging/standards/core/19/lightpush.html) as service node
+- [FILTER](https://lip.logos.co/messaging/standards/core/12/filter.html) as service node
+- [STORE](https://lip.logos.co/messaging/standards/core/13/store.html) as client
+- [METADATA](https://lip.logos.co/messaging/standards/core/66/metadata.html) as client and service node
 - [P2P-RELIABILITY](/standards/application/p2p-reliability.md)
-- [DISCV5](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/33/discv5.md)
-- [PEER-EXCHANGE](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/34/peer-exchange.md) as client and service node
+- [DISCV5](https://lip.logos.co/messaging/standards/core/33/discv5.html)
+- [PEER-EXCHANGE](https://lip.logos.co/messaging/standards/core/34/peer-exchange.html) as client and service node
 - [RENDEZVOUS](https://github.com/waku-org/specs/blob/master/standards/core/rendezvous.md) as client and service node
 
 `edge` mode SHOULD be used if node functions in resource restricted environment,
@@ -358,14 +356,14 @@ types:
     fields:
       content_topic:
         type: string
-        description: "Content-based filtering field as defined in [TOPICS](https://github.com/vacp2p/rfc-index/blob/main/waku/informational/23/topics.md#content-topics)"
+        description: "Content-based filtering field as defined in [TOPICS](https://lip.logos.co/messaging/informational/23/topics.html#content-topics)"
       payload:
         type: array<byte>
         description: "The message data."
       ephemeral:
         type: bool
         default: false
-        description: "Whether the message is ephemeral. Read at [ATTRIBUTES](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/14/message.md#message-attributes)"
+        description: "Whether the message is ephemeral. Read at [ATTRIBUTES](https://lip.logos.co/messaging/standards/core/14/message.html#message-attributes)"
 
   MessageReceivedEvent:
     type: object
@@ -493,9 +491,9 @@ functions:
 
 **`mode`**:
 
-If the `mode` set is `edge`, `subscribe` SHOULD trigger set up a subscription using [FILTER](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/12/filter.md) as client and [P2P-RELIABILITY](/standards/application/p2p-reliability.md).
+If the `mode` set is `edge`, `subscribe` SHOULD trigger set up a subscription using [FILTER](https://lip.logos.co/messaging/standards/core/12/filter.html) as client and [P2P-RELIABILITY](/standards/application/p2p-reliability.md).
 
-If the `mode` set is `core`, `subscribe` SHOULD trigger set up a subscription using [RELAY](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/11/relay.md) and [P2P-RELIABILITY](/standards/application/p2p-reliability.md).
+If the `mode` set is `core`, `subscribe` SHOULD trigger set up a subscription using [RELAY](https://lip.logos.co/messaging/standards/core/11/relay.html) and [P2P-RELIABILITY](/standards/application/p2p-reliability.md).
 This MAY trigger joining a new shard if not already set.
 
 Only messages on subscribed content topics SHOULD be emitted by a `MessageEvents` event source, meaning messages received via `RELAY` SHOULD be filtered by content topics before emission.
@@ -553,9 +551,9 @@ TODO
 sending, or both, and as a result, it cannot reliably receive or transmit messages.
 
 `PartiallyConnected` indicates that the node meets the minimum operational requirements:
-it is connected to at least one peer with a protocol to send messages ([LIGHTPUSH](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/19/lightpush.md) or [RELAY](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/11/relay.md)), 
-one peer with a protocol to receive messages ([FILTER](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/12/filter.md) or [RELAY](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/11/relay.md)),
-and one peer with [STORE](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/13/store.md) service capabilities,
+it is connected to at least one peer with a protocol to send messages ([LIGHTPUSH](https://lip.logos.co/messaging/standards/core/19/lightpush.html) or [RELAY](https://lip.logos.co/messaging/standards/core/11/relay.html)),
+one peer with a protocol to receive messages ([FILTER](https://lip.logos.co/messaging/standards/core/12/filter.html) or [RELAY](https://lip.logos.co/messaging/standards/core/11/relay.html)),
+and one peer with [STORE](https://lip.logos.co/messaging/standards/core/13/store.html) service capabilities,
 although performance or reliability may still be impacted.
 
 `Connected` indicates that the node is operating optimally,
@@ -589,7 +587,7 @@ functions:
 
 ## The Validation API
 
-[WAKU2-RLN-RELAY](https://github.com/vacp2p/rfc-index/blob/main/waku/standards/core/17/rln-relay.md) is currently the primary message validation mechanism in place.
+[WAKU2-RLN-RELAY](https://lip.logos.co/messaging/standards/core/17/rln-relay.html) is currently the primary message validation mechanism in place.
 
 Work is scheduled to specify a validate API to enable plug-in validation.
 As part of this API, it will be expected that a validation object can be passed,
