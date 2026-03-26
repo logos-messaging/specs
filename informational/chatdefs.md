@@ -33,7 +33,7 @@ Terms are organized into the following categories for clarity and ease of refere
 - **Roles**: Defined entity types that determine how a participant behaves within a communication protocol.
 - **Message Types**: Classifications and categories of protocol messages
 - **Transports**: Abstract methods of transmitting payloads
--**Software Entities**: Distinct software-defined actors or components that participate in the operation of ChatProtocols
+-**Software Entities**: Distinct software-defined actors or components that participate in the operation of chat protocols.
 
 ## Definitions
 
