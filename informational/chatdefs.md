@@ -49,11 +49,11 @@ Terms are organized into the following categories for clarity and ease of refere
 
 The term "message" often has multiple meanings depending on context. The following definitions are used to disambiguate between different abstraction levels. 
 
-**Content**: The data that is intended for end-users or applications - this includes text, images and other user valued data. These messages originate from the application, and are ultimately delivered to other applications. 
+**Content**: An opaque byte sequence whose meaning is defined solely by the Application. The chat protocol layer neither interprets nor validates Content structure.
 
-**Frame**: Frames are message types defined by chat protocols to provide functionality - they are how clients exchange information with each other and coordinate state. Once encoded into their binary representation for transport, frames become Payloads as the data is no longer usable
+**Frame**: A structured protocol message exchanged between Clients. Frames are typed data structures that carry protocol meaning — they are how clients coordinate state and exchange information. Some Frames may carry Content as an opaque field. Once serialized for transport they become Payloads.
 
-**Payload**: The encoded data or data structures used by lower layer protocols. This includes the encoded bytes passed to a delivery service or subsequent layers. Payloads are usually associated with the delivery process, which is not defined by chat protocols.
+**Payload**: The serialized binary representation of a Frame, treated by the transport layer as an opaque byte sequence with no chat-layer semantics.
 
 
 Other specific message types include:
