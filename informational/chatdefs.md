@@ -58,7 +58,7 @@ The term "message" often has multiple meanings depending on context. The followi
 
 Other specific message types include:
 
-**Content Type**: The structured format of content. These data structures represent specific encodings of Text, Image, Audio data. 
+**Content Type**: A definition of the structure and encoding of a Content instance, interpreted solely by the Application.
 
 **Delivery Acknowledgement**: A notification from a receiving client to sender that their message was successfully received. While similar to a read-receipt, delivery acknowledgements differ in that the acknowledgement originates based on the client, where read-receipts are fired when they are displayed to a user.
 
