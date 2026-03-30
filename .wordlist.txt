@@ -5,7 +5,9 @@ api
 AsyncAPI
 autosharding
 AutoShardingConfig
+BCP
 bool
+Bradner
 camelCase
 cd
 centric
@@ -26,6 +28,7 @@ DHT
 discv
 DISCV
 DoS
+encodings
 enrtree
 enum
 eth
@@ -52,6 +55,7 @@ https
 iana
 IANA
 IDL
+implementers
 implementor
 Inclusivity
 Init
