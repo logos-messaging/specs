@@ -199,7 +199,7 @@ types:
         default: DefaultRateLimitConfig
         description: "Configuration for rate limit management."
       encryption:
-        type: IEncryption
+        type: optional<IEncryption>
         default: none
         description: "Optional pluggable encryption implementation. If none, messages are sent unencrypted."
 
