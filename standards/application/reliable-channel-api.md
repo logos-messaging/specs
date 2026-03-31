@@ -313,7 +313,7 @@ The default `memory` backend does not survive process restarts; implementors pro
 
 The `encryption` field in `ReliableChannelConfig` is intentionally optional.
 The Reliable Channel API is agnostic to encryption mechanisms.
-Encryption is considered a concern of upper layers (e.g., the Logos Chat).
+
 When an `IEncryption` implementation is provided, it MUST be applied as described in the [Messaging extended definitions](#messaging-extended-definitions).
 
 ### Messaging
