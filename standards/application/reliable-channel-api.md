@@ -139,8 +139,6 @@ types:
         parameters:
           - name: plaintext
             type: array<byte>
-          - name: encryptionKey
-            type: array<byte>
         returns:
           type: result<array<byte>, error>
       decrypt:
@@ -148,8 +146,6 @@ types:
         description: "Decrypts a byte payload. Returns the decrypted payload."
         parameters:
           - name: ciphertext
-            type: array<byte>
-          - name: encryptionKey
             type: array<byte>
         returns:
           type: result<array<byte>, error>
