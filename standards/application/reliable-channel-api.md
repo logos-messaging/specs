@@ -41,7 +41,7 @@ editor: Logos Messaging Team
 ## Abstract
 
 This document specifies the **Reliable Channel API**,
-an application-level interface that sits between the Chat SDK and the [MESSAGING-API](/standards/application/messaging-api.md) plus [P2P-RELIABILITY](/standards/application/p2p-reliability.md), i.e., `chat-sdk` <-> **reliable-channel-api** <-> `messaging-api/p2p-reliability`.
+an application-level interface that sits between the Logos Chat and the [MESSAGING-API](/standards/application/messaging-api.md) plus [P2P-RELIABILITY](/standards/application/p2p-reliability.md), i.e., `logos-chat` <-> **reliable-channel-api** <-> `messaging-api/p2p-reliability`.
 
 It bundles segmentation, end-to-end reliability via [Scalable Data Sync (SDS)](https://lip.logos.co/ift-ts/raw/sds.html), rate limit management, and a pluggable encryption hook
 into a single interface for sending and receiving messages reliably.
@@ -57,7 +57,7 @@ This API addresses that gap by introducing:
 - **Segmentation** to handle large messages exceeding network size limits.
 - **SDS** to provide causal-history-based end-to-end acknowledgement and retransmission.
 - **Rate Limit Manager** to comply with [RLN](https://lip.logos.co/messaging/standards/core/17/rln-relay.html) constraints when sending segmented messages.
-- **Encryption Hook** to allow upper layers (e.g., the Chat SDK) to provide a pluggable encryption mechanism.
+- **Encryption Hook** to allow upper layers (e.g., the Logos Chat) to provide a pluggable encryption mechanism.
 
 The separation between Reliable Channels and encryption ensures the API remains agnostic to identity and key management concerns,
 which are handled by higher layers.
@@ -75,11 +75,11 @@ A custom Interface Definition Language (IDL) in YAML is used, consistent with [M
 
 ### Architectural position
 
-The Reliable Channel API sits between the Chat SDK and the Messaging API, as follows:
+The Reliable Channel API sits between the Logos Chat and the Messaging API, as follows:
 
 ```
 ┌────────────────────────────────────────────────────────────┐
-│                      Chat SDK                              │
+│                      Logos Chat                            │
 │              (Identity + Encryption + UX)                  │
 └───────────────────────────┬────────────────────────────────┘
                             │
@@ -317,7 +317,7 @@ The default `memory` backend does not survive process restarts; implementors pro
 
 The `encryption` field in `ReliableChannelConfig` is intentionally optional.
 The Reliable Channel API is agnostic to encryption mechanisms.
-Encryption is considered a concern of upper layers (e.g., the Chat SDK).
+Encryption is considered a concern of upper layers (e.g., the Logos Chat).
 When an `IEncryption` implementation is provided, it MUST be applied as described in the [Messaging extended definitions](#messaging-extended-definitions).
 
 ### Messaging
@@ -458,7 +458,7 @@ The Encryption Hook provides a pluggable interface for upper layers to inject en
 - The hook is optional; when not provided, messages are sent as plaintext.
 - Encryption is applied per chunk, after segmentation and SDS registration.
 - Decryption is applied per chunk, before SDS delivery.
-- The `IEncryption` interface MUST be implemented by the caller (e.g., the Chat SDK).
+- The `IEncryption` interface MUST be implemented by the caller (e.g., the Logos Chat).
 - The Reliable Channel API MUST NOT impose any specific encryption scheme.
 
 ## Security/Privacy Considerations
