@@ -174,11 +174,11 @@ types:
 
   ReliableChannel:
     type: object
-    description: "A reliable channel instance or communication group having end-to-end reliable messaging on a single content topic."
+    description: "An entity that guarantees message delivery among all participants on a single content topic."
     fields:
       channelId:
         type: string
-        description: "Identifier of the communication group that is being synchronized"
+        description: "Unique identifier"
       messageEvents:
         type: ReliableMessageEvents
         description: "Event emitter for message-related events on this channel"
