@@ -46,7 +46,6 @@ an application-level interface that sits between the Logos Chat and the [MESSAGI
 It bundles segmentation, end-to-end reliability via [Scalable Data Sync (SDS)](https://lip.logos.co/ift-ts/raw/sds.html), rate limit management, and a pluggable encryption hook
 into a single interface for sending and receiving messages reliably.
 
-Application developers SHOULD use this API when end-to-end reliability across multiple routing hops is required.
 
 ## Motivation
 
