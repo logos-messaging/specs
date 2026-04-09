@@ -56,7 +56,7 @@ This API addresses that gap by introducing:
 - **Segmentation** to handle large messages exceeding network size limits.
 - **SDS** to provide causal-history-based end-to-end acknowledgement and retransmission.
 - **Rate Limit Manager** to comply with [RLN](https://lip.logos.co/messaging/standards/core/17/rln-relay.html) constraints when sending segmented messages.
-- **Encryption Hook** to allow upper layers (e.g., the Logos Chat) to provide a pluggable encryption mechanism.
+- **Encryption Hook** to allow upper layers (e.g., the Logos Chat) to provide a pluggable encryption mechanism. The main motivation for encryption is to protect the payload and content_topic from MessageEnvelope, defined in [MESSAGING-API](/standards/application/messaging-api.md). 
 
 The separation between Reliable Channels and encryption ensures the API remains agnostic to identity and key management concerns,
 which are handled by higher layers.
