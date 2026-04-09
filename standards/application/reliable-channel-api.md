@@ -152,10 +152,8 @@ types:
   IEncryption:
     type: object
     description: "Interface for a pluggable encryption mechanism.
-    When IEncryption is provided, see ReliableChannelConfig, the encrypt and decrypt operations MUST be provided by the API consumer.
-    Notice that the encrypt/decrypt signatures may defer from what are described below but the important
-    point is that both operations MUST have a mechanism to accept an byte array as input and return a
-    byte array as an output."
+    When provided, see ReliableChannelConfig, the API consumer MUST implement both encrypt and decrypt operations.
+    Implementations MAY use different signatures than those described below, as long as each operation accepts a byte array and returns a byte array."
     fields:
       encrypt:
         type: function
