@@ -141,10 +141,13 @@ Raya's
 ReliableChannel
 ReliableChannelConfig
 ReliableEnvelope
+ReliableIrretrievableMessageEvent
+ReliableMessageAcknowledgedEvent
 ReliableMessageEvents
 ReliableMessageReceivedEvent
 ReliableMessageSendErrorEvent
 ReliableMessageSentEvent
+ReliableSyncStatusEvent
 requestId
 RequestId
 responder
@@ -169,6 +172,9 @@ SDS'ed
 sdsConfig
 SdsConfig
 sdk
+syncStatus
+SyncStatus
+SyncStatusDetail
 SDK
 SegmentationConfig
 segmentationConfig
