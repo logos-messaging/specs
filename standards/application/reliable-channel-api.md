@@ -173,7 +173,7 @@ types:
         default: ""
         description: "Reliable channel identifier.
         If empty, the message is considered ephemeral and is not sent reliably.
-        If != empty, the message will be segmented, SDS'ed and encrypted under the given reliable channel."
+        If != empty, the messageEnvelope will be segmented, SDS'ed and encrypted under the given reliable channel."
 
   ReliableChannel:
     type: object
