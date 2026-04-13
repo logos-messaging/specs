@@ -280,9 +280,6 @@ functions:
   openChannel:
     description: "Opens a reliable channel. Sets up the required SDS state, segmentation, and encryption."
     parameters:
-      - name: nodeConfig
-        type: NodeConfig
-        description: "The node configuration. See [MESSAGING-API](/standards/application/messaging-api.md)."
       - name: channelConfig
         type: ReliableChannelConfig
         description: "Configuration for the channel."
