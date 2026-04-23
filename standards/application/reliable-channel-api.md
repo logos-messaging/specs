@@ -158,7 +158,7 @@ types:
         type: function
         description: "Encrypts a byte payload. Returns the encrypted payload."
         parameters:
-          - name: plaintext
+          - name: content
             type: array<byte>
         returns:
           type: result<array<byte>, error>
