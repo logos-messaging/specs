@@ -276,7 +276,7 @@ types:
 ```yaml
 functions:
 
-  openChannel:
+  createReliableChannel:
     description: "Opens a reliable channel. Sets up the required SDS state, segmentation, and encryption."
     parameters:
       - name: channelConfig
