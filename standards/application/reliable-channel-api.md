@@ -166,7 +166,7 @@ types:
         type: function
         description: "Decrypts a byte payload. Returns the decrypted payload."
         parameters:
-          - name: ciphertext
+          - name: payload
             type: array<byte>
         returns:
           type: result<array<byte>, error>
