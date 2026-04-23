@@ -105,27 +105,6 @@ This API considers the types defined by [MESSAGING-API](/standards/application/m
 
 ```yaml
 types:
-  SyncStatusDetail:
-    type: object
-    description: "Provides a snapshot of the channel's synchronisation state."
-    fields:
-      received:
-        type: uint
-        description: "Number of messages successfully received."
-      missing:
-        type: uint
-        description: "Number of messages detected as missing but not yet retrieved."
-      lost:
-        type: uint
-        description: "Number of messages that could not be retrieved after all attempts."
-
-  SyncStatus:
-    type: enum
-    description: "Indicates whether the channel has detected any outstanding missing messages."
-    values:
-      - synced: "No known missing messages (some may be permanently lost)."
-      - syncing: "Actively attempting to retrieve one or more missing messages."
-
   IEncryption:
     type: object
     description: "Interface for a pluggable encryption mechanism.
@@ -189,9 +168,6 @@ types:
       messageEvents:
         type: MessageEvents
         description: "Event emitter for message-related events on this channel"
-      syncStatus:
-        type: SyncStatus
-        description: "Current synchronisation status of the channel. Transitions between 'syncing' and 'synced' as missing messages are detected and resolved."
 
   ReliableChannelConfig:
     type: object
@@ -338,17 +314,6 @@ types:
         type: RequestId
         description: "The request ID of the unrecoverable message. `RequestId` is defined in [MESSAGING-API](./messaging-api.md)."
 
-  EventSyncStatus:
-    type: object
-    description: "Event emitted when the channel's sync status transitions between 'synced' and 'syncing'."
-    fields:
-      status:
-        type: SyncStatus
-        description: "The new sync status"
-      detail:
-        type: SyncStatusDetail
-        description: "Counters describing the current sync state"
-
   MessageEvents:
     type: event_emitter
     description: "Event source for reliable message events on a channel"
@@ -363,8 +328,6 @@ types:
         type: EventMessageSendError
       "reliable:message:irretrievable":
         type: EventIrretrievableMessage
-      "reliable:sync:status":
-        type: EventSyncStatus
 ```
 
 #### Messaging function definitions
