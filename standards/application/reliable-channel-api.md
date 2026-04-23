@@ -220,11 +220,9 @@ types:
     fields:
       segmentationConfig:
         type: SegmentationConfig
-        default: DefaultSegmentationConfig
-        description: "Configuration for message segmentation."
+        description: "Configuration for message segmentation. Please refer to [SEGMENTATION](./segmentation.md) for more details."
       sdsConfig:
         type: SdsConfig
-        default: DefaultSdsConfig
         description: "Configuration for Scalable Data Sync."
       rateLimitConfig:
         type: RateLimitConfig
@@ -298,31 +296,6 @@ functions:
         description: "The channel to close."
     returns:
       type: result<void, error>
-```
-
-#### Channel predefined values
-
-```yaml
-values:
-
-  DefaultSegmentationConfig:
-    type: SegmentationConfig
-    fields:
-      chunkSizeBytes: 102400  # 100 KiB
-
-  DefaultSdsConfig:
-    type: SdsConfig
-    fields:
-      historyBackend: "memory"
-      acknowledgementTimeoutMs: 5000
-      maxRetransmissions: 5
-      causalHistorySize: 2
-
-  DefaultRateLimitConfig:
-    type: RateLimitConfig
-    fields:
-      enabled: true
-      epochSizeMs: 600000
 ```
 
 #### Channel extended definitions
