@@ -298,22 +298,6 @@ types:
         type: string
         description: "Error message describing what went wrong"
 
-  EventMessageAcknowledged:
-    type: object
-    description: "Event emitted when the message has been definitively acknowledged via causal history."
-    fields:
-      requestId:
-        type: RequestId
-        description: "The request ID associated with the acknowledged message. `RequestId` is defined in [MESSAGING-API](./messaging-api.md)."
-
-  EventIrretrievableMessage:
-    type: object
-    description: "Event emitted when a missing message could not be retrieved after all store-query attempts."
-    fields:
-      requestId:
-        type: RequestId
-        description: "The request ID of the unrecoverable message. `RequestId` is defined in [MESSAGING-API](./messaging-api.md)."
-
   MessageEvents:
     type: event_emitter
     description: "Event source for reliable message events on a channel"
@@ -322,12 +306,8 @@ types:
         type: EventMessageReceived
       "reliable:message:sent":
         type: EventMessageSent
-      "reliable:message:acknowledged":
-        type: EventMessageAcknowledged
       "reliable:message:send-error":
         type: EventMessageSendError
-      "reliable:message:irretrievable":
-        type: EventIrretrievableMessage
 ```
 
 #### Messaging function definitions
