@@ -203,7 +203,7 @@ types:
         type: string
         description: "Unique identifier"
       messageEvents:
-        type: ReliableMessageEvents
+        type: MessageEvents
         description: "Event emitter for message-related events on this channel"
       syncStatus:
         type: SyncStatus
@@ -345,7 +345,7 @@ When an `IEncryption` implementation is provided, it MUST be applied as describe
 
 ```yaml
 types:
-  ReliableMessageReceivedEvent:
+  EventMessageReceived:
     type: object
     description: "Event emitted when a complete message has been received and reassembled."
     fields:
@@ -359,7 +359,7 @@ types:
         type: array<byte>
         description: "The decrypted and reassembled message payload"
 
-  ReliableMessageSentEvent:
+  EventReliableMessageSent:
     type: object
     description: "Event emitted when all chunks of a message have been acknowledged by the network."
     fields:
@@ -367,7 +367,7 @@ types:
         type: RequestId
         description: "The request ID associated with the sent message"
 
-  ReliableMessageSendErrorEvent:
+  EventMessageSendError:
     type: object
     description: "Event emitted when a message send operation fails after exhausting retransmission attempts."
     fields:
@@ -378,7 +378,7 @@ types:
         type: string
         description: "Error message describing what went wrong"
 
-  ReliableMessageAcknowledgedEvent:
+  EventMessageAcknowledged:
     type: object
     description: "Event emitted when the message has been definitively acknowledged via causal history."
     fields:
@@ -386,7 +386,7 @@ types:
         type: RequestId
         description: "The request ID associated with the acknowledged message"
 
-  ReliableIrretrievableMessageEvent:
+  EventIrretrievableMessage:
     type: object
     description: "Event emitted when a missing message could not be retrieved after all store-query attempts."
     fields:
@@ -394,7 +394,7 @@ types:
         type: RequestId
         description: "The request ID of the unrecoverable message"
 
-  ReliableSyncStatusEvent:
+  EventSyncStatus:
     type: object
     description: "Event emitted when the channel's sync status transitions between 'synced' and 'syncing'."
     fields:
@@ -405,24 +405,24 @@ types:
         type: SyncStatusDetail
         description: "Counters describing the current sync state"
 
-  ReliableMessageEvents:
+  MessageEvents:
     type: event_emitter
     description: "Event source for reliable message events on a channel"
     events:
       "reliable:message:received":
-        type: ReliableMessageReceivedEvent
+        type: EventMessageReceived
       "reliable:message:sent":
-        type: ReliableMessageSentEvent
+        type: EventMessageSent
       "reliable:message:acknowledged":
-        type: ReliableMessageAcknowledgedEvent
+        type: EventMessageAcknowledged
         description: "Message definitively acknowledged via causal history."
       "reliable:message:send-error":
-        type: ReliableMessageSendErrorEvent
+        type: EventMessageSendError
       "reliable:message:irretrievable":
-        type: ReliableIrretrievableMessageEvent
+        type: EventIrretrievableMessage
         description: "Missing message could not be retrieved after all store-query attempts."
       "reliable:sync:status":
-        type: ReliableSyncStatusEvent
+        type: EventSyncStatus
         description: "Channel sync status changed between 'synced' and 'syncing'."
 ```
 
