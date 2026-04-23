@@ -254,6 +254,9 @@ functions:
       - name: channelConfig
         type: ReliableChannelConfig
         description: "Configuration for the channel."
+      - name: senderId
+        type: string
+        description: "An identifier for this sender. SHOULD be unique and persisted between sessions."
     returns:
       type: result<ReliableChannel, error>
 
