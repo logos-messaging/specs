@@ -271,7 +271,7 @@ types:
       epochSizeMs:
         type: uint
         default: 600000  # 10 minutes
-        description: "The epoch size used by the RLN relay, in milliseconds. Only the first message chunk is rate limited."
+        description: "The epoch size used by the RLN relay, in milliseconds."
 ```
 
 #### Channel function definitions
