@@ -18,17 +18,9 @@ editor: Logos Messaging Team
     * [IDL](#idl)
     * [Architectural position](#architectural-position)
   * [The Reliable Channel API](#the-reliable-channel-api)
-    * [Common](#common)
-      * [Common type definitions](#common-type-definitions)
-    * [Channel](#channel)
-      * [Channel type definitions](#channel-type-definitions)
-      * [Channel function definitions](#channel-function-definitions)
-      * [Channel predefined values](#channel-predefined-values)
-      * [Channel extended definitions](#channel-extended-definitions)
-    * [Messaging](#messaging)
-      * [Messaging type definitions](#messaging-type-definitions)
-      * [Messaging function definitions](#messaging-function-definitions)
-      * [Messaging extended definitions](#messaging-extended-definitions)
+    * [Type definitions](#type-definitions)
+    * [Channel lifecycle](#channel-lifecycle)
+    * [Channel usage](#channel-usage)
   * [Components](#components)
     * [Segmentation](#segmentation)
     * [Scalable Data Sync (SDS)](#scalable-data-sync-sds)
@@ -97,11 +89,9 @@ The Reliable Channel API sits between the application layer and the Messaging AP
 
 ## The Reliable Channel API
 
-### Common
+This API considers the types defined by [MESSAGING-API](/standards/application/messaging-api.md) plus the following.
 
-#### Common type definitions
-
-This API considers the types defined by [MESSAGING-API](/standards/application/messaging-api.md) plus the following:
+### Type definitions
 
 ```yaml
 types:
@@ -133,14 +123,7 @@ types:
     description: "Interface for a pluggable SDS persistence backend.
     Implementations MUST provide all functions required to save and retrieve SDS state per channel.
     Refer to the [SDS spec](https://lip.logos.co/ift-ts/raw/sds.html) for the full definition of what state must be persisted."
-```
 
-### Channel
-
-#### Channel type definitions
-
-```yaml
-types:
   ReliableEnvelope:
     type: object
     description: "Wraps a MessageEnvelope (defined in [MESSAGING-API](/standards/application/messaging-api.md)) with a reliable channel identifier.
@@ -217,57 +200,7 @@ types:
         type: uint
         default: 600000  # 10 minutes
         description: "The epoch size used by the RLN relay, in milliseconds."
-```
 
-#### Channel function definitions
-
-```yaml
-functions:
-
-  createReliableChannel:
-    description: "Opens a reliable channel. Sets up the required SDS state, segmentation, and encryption."
-    parameters:
-      - name: channelConfig
-        type: ReliableChannelConfig
-        description: "Configuration for the channel."
-    returns:
-      type: result<ReliableChannel, error>
-
-  closeChannel:
-    description: "Closes a reliable channel and releases all associated resources and internal state."
-    parameters:
-      - name: channel
-        type: ReliableChannel
-        description: "The channel to close."
-    returns:
-      type: result<void, error>
-```
-
-#### Channel extended definitions
-
-**State management**:
-
-Each `ReliableChannel` MUST maintain internal state for SDS, including:
-- A committed message log recording sent messages and their acknowledgement status.
-- An outgoing buffer of unacknowledged message chunks pending confirmation.
-- An incoming buffer for partially received segmented messages awaiting full reassembly.
-
-The state MUST be persisted according to the `historyBackend` specified in `SdsConfig`.
-The default `memory` backend does not survive process restarts; implementors providing persistence SHOULD use a durable backend.
-
-**Encryption**:
-
-The `encryption` field in `ReliableChannelConfig` is intentionally optional.
-The Reliable Channel API is agnostic to encryption mechanisms.
-
-When an `IEncryption` implementation is provided, it MUST be applied as described in the [Messaging extended definitions](#messaging-extended-definitions).
-
-### Messaging
-
-#### Messaging type definitions
-
-```yaml
-types:
   EventMessageReceived:
     type: object
     description: "Event emitted when a complete message has been received and reassembled."
@@ -310,7 +243,48 @@ types:
         type: EventMessageSendError
 ```
 
-#### Messaging function definitions
+### Channel lifecycle
+
+```yaml
+functions:
+
+  createReliableChannel:
+    description: "Opens a reliable channel. Sets up the required SDS state, segmentation, and encryption."
+    parameters:
+      - name: channelConfig
+        type: ReliableChannelConfig
+        description: "Configuration for the channel."
+    returns:
+      type: result<ReliableChannel, error>
+
+  closeChannel:
+    description: "Closes a reliable channel and releases all associated resources and internal state."
+    parameters:
+      - name: channel
+        type: ReliableChannel
+        description: "The channel to close."
+    returns:
+      type: result<void, error>
+```
+
+**State management**:
+
+Each `ReliableChannel` MUST maintain internal state for SDS, including:
+- A committed message log recording sent messages and their acknowledgement status.
+- An outgoing buffer of unacknowledged message chunks pending confirmation.
+- An incoming buffer for partially received segmented messages awaiting full reassembly.
+
+The state MUST be persisted according to the `historyBackend` specified in `SdsConfig`.
+The default `memory` backend does not survive process restarts; implementors providing persistence SHOULD use a durable backend.
+
+**Encryption**:
+
+The `encryption` field in `ReliableChannelConfig` is intentionally optional.
+The Reliable Channel API is agnostic to encryption mechanisms.
+
+When an `IEncryption` implementation is provided, it MUST be applied as described in [Channel usage](#channel-usage).
+
+### Channel usage
 
 ```yaml
 functions:
@@ -325,7 +299,7 @@ functions:
       description: "`RequestId` is defined in [MESSAGING-API](./messaging-api.md)."
 ```
 
-#### Messaging extended definitions
+Incoming events are emitted on `ReliableChannel.messageEvents` as defined by `MessageEvents`.
 
 **Outgoing message processing order**:
 
