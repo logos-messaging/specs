@@ -164,20 +164,20 @@ types:
 types:
   ReliableEnvelope:
     type: object
-    description: "Represents an extension of the MessageEnvelope defined in MESSAGING-API aiming mostly to allow
-    including a reliable channel id attribute that, when given, it will assume the message should be sent reliably. Therefore, we leave open for implementors to replace the MessageEnvelope implementation and just add the reliable channel id there."
+    description: "Wraps a MessageEnvelope (defined in [MESSAGING-API](/standards/application/messaging-api.md)) with a reliable channel identifier.
+    An empty channelId marks the message as ephemeral; a non-empty value routes it through the named reliable channel for segmentation, SDS tracking, and encryption."
     fields:
       messageEnvelope:
         type: MessageEnvelope
-        description: "Please refer to the [MESSAGING-API](/standards/application/messaging-api.md) for details."
+        description: "The message payload and metadata. Refer to [MESSAGING-API](/standards/application/messaging-api.md) for details."
       channelId:
         type: string
         default: ""
         description: "Reliable channel identifier.
-        If empty, the message is considered ephemeral: it is not tracked by SDS, never retransmitted, and NEVER segmented.
+        If empty, the message is ephemeral: not tracked by SDS, never retransmitted, and NEVER segmented.
         Ephemeral payloads exceeding the network size limit MUST be rejected with an error.
         When the rate limit is approached, ephemeral messages are dropped immediately rather than queued.
-        If != empty, the messageEnvelope will be segmented, SDS'ed and encrypted under the given reliable channel."
+        If non-empty, the messageEnvelope is segmented, registered with SDS, and encrypted under the named reliable channel."
 
   ReliableChannel:
     type: object
@@ -299,12 +299,9 @@ types:
       requestId:
         type: RequestId
         description: "Identifier of the `send` operation that initiated the message sending. `RequestId` is defined in [MESSAGING-API](./messaging-api.md)."
-      contentTopic:
-        type: string
-        description: "Content topic on which the message was received"
-      payload:
-        type: array<byte>
-        description: "The decrypted and reassembled message payload"
+      envelope:
+        type: ReliableEnvelope
+        description: "The reassembled message and its channel context. `envelope.messageEnvelope.payload` contains the fully reassembled content; `envelope.channelId` identifies the channel on which it arrived."
 
   EventReliableMessageSent:
     type: object
@@ -375,14 +372,11 @@ types:
 ```yaml
 functions:
   send:
-    description: "Send a message reliably through the channel. Applies segmentation, SDS, and encryption (if configured) before dispatching."
+    description: "Send a message through the reliable channel API. Routing and guarantees are determined by the envelope's channelId: empty means ephemeral; non-empty applies segmentation, SDS, and encryption (if configured) before dispatching."
     parameters:
-      - name: channel
-        type: optional<ReliableChannel>
-        description: "The reliable channel to use for sending. If not provided, the message is sent without delivery guarantees and is treated as ephemeral."
-      - name: payload
-        type: array<byte>
-        description: "The raw message payload to send."
+      - name: envelope
+        type: ReliableEnvelope
+        description: "The envelope containing the message and channel routing information."
     returns:
       type: result<RequestId, error>
       description: "`RequestId` is defined in [MESSAGING-API](./messaging-api.md)."
@@ -392,12 +386,12 @@ functions:
 
 **Outgoing message processing order**:
 
-When `send` is called, the implementation MUST process the message in the following order:
+When `send` is called with a `ReliableEnvelope` whose `channelId` is non-empty, the implementation MUST process `envelope.messageEnvelope.payload` in the following order:
 
 1. **Segment**: Split the payload into chunks as defined in [SEGMENTATION-API](./segmentation-api.md).
 2. **Apply SDS**: Register each chunk with the SDS layer to track acknowledgements and enable retransmission.
 3. **Encrypt**: If an `IEncryption` implementation is provided, encrypt each chunk before transmission.
-4. **Dispatch**: Send each chunk via the underlying [MESSAGING-API](/standards/application/messaging-api.md).
+4. **Dispatch**: Send each chunk via the underlying [MESSAGING-API](/standards/application/messaging-api.md) using `envelope.messageEnvelope.content_topic` as the destination.
 
 **Incoming message processing order**:
 
