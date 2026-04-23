@@ -170,6 +170,12 @@ types:
             type: array<byte>
         returns:
           type: result<array<byte>, error>
+
+  IPersistence:
+    type: object
+    description: "Interface for a pluggable SDS persistence backend.
+    Implementations MUST provide all functions required to save and retrieve SDS state per channel.
+    Refer to the [SDS spec](https://lip.logos.co/ift-ts/raw/sds.html) for the full definition of what state must be persisted."
 ```
 
 ### Channel
@@ -242,9 +248,8 @@ types:
     type: object
     fields:
       persistence:
-        type: string
-        default: "memory"
-        description: "Backend for persisting the SDS local history. Implementations MAY support custom backends (e.g., 'memory', 'sqlite')."
+        type: IPersistence
+        description: "Backend for persisting the SDS local history. Implementations MAY support custom backends."
       acknowledgementTimeoutMs:
         type: uint
         default: 5000
