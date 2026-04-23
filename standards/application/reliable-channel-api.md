@@ -393,15 +393,12 @@ types:
         type: EventMessageSent
       "reliable:message:acknowledged":
         type: EventMessageAcknowledged
-        description: "Message definitively acknowledged via causal history."
       "reliable:message:send-error":
         type: EventMessageSendError
       "reliable:message:irretrievable":
         type: EventIrretrievableMessage
-        description: "Missing message could not be retrieved after all store-query attempts."
       "reliable:sync:status":
         type: EventSyncStatus
-        description: "Channel sync status changed between 'synced' and 'syncing'."
 ```
 
 #### Messaging function definitions
