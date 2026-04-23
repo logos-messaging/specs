@@ -241,7 +241,7 @@ types:
   SdsConfig:
     type: object
     fields:
-      historyBackend:
+      persistence:
         type: string
         default: "memory"
         description: "Backend for persisting the SDS local history. Implementations MAY support custom backends (e.g., 'memory', 'sqlite')."
