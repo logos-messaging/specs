@@ -45,8 +45,8 @@ The [MESSAGING-API](/standards/application/messaging-api.md) provides peer-to-pe
 but does not provide high end-to-end delivery guarantees from sender to recipient.
 
 This API addresses that gap by introducing:
-- **Segmentation** to handle large messages exceeding network size limits.
-- **SDS** to provide causal-history-based end-to-end acknowledgement and retransmission.
+- **[SEGMENTATION-API](/standards/application/segmentation-api.md)** to handle large messages exceeding network size limits.
+- **[SDS](https://lip.logos.co/ift-ts/raw/sds.html)** to provide causal-history-based end-to-end acknowledgement and retransmission.
 - **Rate Limit Manager** to comply with [RLN](https://lip.logos.co/messaging/standards/core/17/rln-relay.html) constraints when sending segmented messages.
 - **Encryption Hook** to allow upper layers to provide a pluggable encryption mechanism. The main motivation for encryption is to protect the payload and content_topic from MessageEnvelope, defined in [MESSAGING-API](/standards/application/messaging-api.md). 
 
@@ -121,7 +121,7 @@ types:
   IPersistence:
     type: object
     description: "Interface for a pluggable SDS persistence backend.
-    Implementations MUST provide all functions required to save and retrieve SDS state per channel.
+    Implementations MUST provide all functions required to save and retrieve SDS state per channel. Implementations MUST also provide the persistence method of interest, e.g., SQLite, custom encrypted storage, etc.
     Refer to the [SDS spec](https://lip.logos.co/ift-ts/raw/sds.html) for the full definition of what state must be persisted."
 
   ReliableEnvelope:
@@ -272,12 +272,12 @@ functions:
 
 **State management**:
 
-Each `ReliableChannel` MUST maintain internal state for SDS, including:
+Each `ReliableChannel` MUST maintain internal state for [SDS](https://lip.logos.co/ift-ts/raw/sds.html). This state MAY be persisted within SDS implementation layer and includes:
 - A committed message log recording sent messages and their acknowledgement status.
 - An outgoing buffer of unacknowledged message chunks pending confirmation.
 - An incoming buffer for partially received segmented messages awaiting full reassembly.
 
-The state MUST be persisted according to the `historyBackend` specified in `SdsConfig`.
+The state MUST be persisted using to the `persistence` tool specified in `SdsConfig`.
 The default `memory` backend does not survive process restarts; implementors providing persistence SHOULD use a durable backend.
 
 **Encryption**:
@@ -309,28 +309,29 @@ Incoming events are emitted on `ReliableChannel.messageEvents` as defined by `Me
 When `send` is called with a `ReliableEnvelope` whose `channelId` is non-empty, the implementation MUST process `envelope.messageEnvelope.payload` in the following order:
 
 1. **Segment**: Split the payload into chunks as defined in [SEGMENTATION-API](./segmentation-api.md).
-2. **Apply SDS**: Register each chunk with the SDS layer to track acknowledgements and enable retransmission.
+2. **Apply [SDS](https://lip.logos.co/ift-ts/raw/sds.html)**: Register each chunk with the SDS layer to track acknowledgements and enable retransmission.
 3. **Encrypt**: If an `IEncryption` implementation is provided, encrypt each chunk before transmission.
-4. **Dispatch**: Send each chunk via the underlying [MESSAGING-API](/standards/application/messaging-api.md) using `envelope.messageEnvelope.content_topic` as the destination.
+4. **Dispatch**: Send each chunk via the underlying [MESSAGING-API](/standards/application/messaging-api.md).
 
 **Incoming message processing order**:
 
 When a chunk is received from the network, the implementation MUST process it in the following order:
 
 1. **Decrypt**: If an `IEncryption` implementation is provided, decrypt the chunk.
-2. **Apply SDS**: Deliver the chunk to the SDS layer, which emits acknowledgements and detects gaps.
+2. **Apply [SDS](https://lip.logos.co/ift-ts/raw/sds.html)**: Deliver the chunk to the SDS layer, which emits acknowledgements and detects gaps.
 3. **Reassemble**: Once all chunks for a message have been received, reassemble and emit a `reliable:message:received` event.
 
 **Retransmission**:
 
-The SDS layer MUST retransmit unacknowledged chunks after `acknowledgementTimeoutMs`,
+A certain Reliable Channel MUST retransmit unacknowledged chunks after `acknowledgementTimeoutMs`,
+according to the [SDS](https://lip.logos.co/ift-ts/raw/sds.html) channel state,
 up to `maxRetransmissions` times.
 If a chunk is not acknowledged after all retransmission attempts, a `reliable:message:send-error` event MUST be emitted.
 
 **Rate limiting**:
 
 When `RateLimitConfig.enabled` is `true`, the implementation MUST space chunk transmissions
-to comply with the RLN epoch constraints defined in `epochSizeMs`.
+to comply with the [RLN](https://lip.logos.co/messaging/standards/core/17/rln-relay.html) epoch constraints defined in `epochSizeMs`.
 Chunks MUST NOT be sent at a rate that would violate the RLN message rate limit for the active epoch.
 
 ## Components
@@ -341,7 +342,7 @@ See [SEGMENTATION-API](./segmentation-api.md).
 
 ### Scalable Data Sync (SDS)
 
-SDS provides end-to-end delivery guarantees using causal history tracking.
+[SDS](https://lip.logos.co/ift-ts/raw/sds.html) provides end-to-end delivery guarantees using causal history tracking.
 
 - Each sent chunk is registered in an outgoing buffer.
 - The recipient sends acknowledgements back to the sender upon receiving chunks.
@@ -361,7 +362,7 @@ The Rate Limit Manager ensures compliance with [RLN](https://lip.logos.co/messag
 
 The Encryption Hook provides a pluggable interface for upper layers to inject encryption.
 
-- The hook is optional; when not provided, messages are sent as plaintext.
+- The hook is optional; when not provided, messages are sent unencrypted.
 - Encryption is applied per chunk, after segmentation and SDS registration.
 - Decryption is applied per chunk, before SDS delivery.
 - The `IEncryption` interface MUST be implemented by the caller.
