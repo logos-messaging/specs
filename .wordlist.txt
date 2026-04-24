@@ -29,6 +29,7 @@ ConnectionStatusEvent
 contentTopic
 contentTopics
 createNode
+createReliableChannel
 creativecommons
 cryptographic
 danielkaiser
@@ -56,6 +57,10 @@ eth
 Eth
 ETH
 EventEmitter
+EventMessageReceived
+EventMessageSendError
+EventMessageSent
+EventReliableMessageSent
 EventSource
 eventType
 fb
@@ -78,6 +83,7 @@ iana
 IANA
 IDL
 IEncryption
+IPersistence
 implementers
 implementor
 implementors
@@ -91,6 +97,7 @@ JSON
 KiB
 Kozlov
 lastChunkIndex
+lifecycle
 liblogosdelivery
 libp
 libp2p
@@ -172,6 +179,7 @@ SDS'ed
 sdsConfig
 SdsConfig
 sdk
+senderId
 syncStatus
 SyncStatus
 SyncStatusDetail
