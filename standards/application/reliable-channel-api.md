@@ -288,7 +288,7 @@ Each `ReliableChannel` MUST maintain internal state for [SDS](https://lip.logos.
 - An incoming buffer for partially received segmented messages awaiting full reassembly.
 
 The state MUST be persisted using the `persistence` backend specified in `SdsConfig`.
-The default `memory` backend does not survive process restarts; implementors providing persistence SHOULD use a durable backend.
+
 
 **Encryption**:
 
