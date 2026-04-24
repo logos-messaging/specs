@@ -163,7 +163,7 @@ Chunks MUST NOT be sent at a rate that would violate the RLN message rate limit 
 
 ### Encryption
 
-The `encryption` field in `ReliableChannelConfig` is intentionally optional.
+The `encryption` parameter in `createReliableChannel` is intentionally optional.
 The Reliable Channel API is agnostic to encryption mechanisms.
 
 When an `IEncryption` implementation is provided, it MUST be applied as described in [Outgoing message processing](#outgoing-message-processing) and [Incoming message processing](#incoming-message-processing).
@@ -189,7 +189,7 @@ types:
   IEncryption:
     type: object
     description: "Interface for a pluggable encryption mechanism.
-    When provided, see ReliableChannelConfig, the API consumer MUST implement both encrypt and decrypt operations.
+    When provided as a parameter to `createReliableChannel`, the API consumer MUST implement both encrypt and decrypt operations.
     Implementations MAY use different signatures than those described below, as long as each operation accepts a byte array and returns a byte array."
     fields:
       encrypt:
@@ -256,10 +256,6 @@ types:
         type: RateLimitConfig
         default: DefaultRateLimitConfig
         description: "Configuration for rate limit management."
-      encryption:
-        type: optional<IEncryption>
-        default: none
-        description: "Optional pluggable encryption implementation. If none, messages are sent unencrypted."
 
   SdsConfig:
     type: object
@@ -348,6 +344,10 @@ functions:
       - name: senderId
         type: string
         description: "An identifier for this sender. SHOULD be unique and persisted between sessions."
+      - name: encryption
+        type: optional<IEncryption>
+        default: none
+        description: "Optional pluggable encryption implementation. If none, messages are sent unencrypted."
     returns:
       type: result<ReliableChannel, error>
 
