@@ -95,6 +95,16 @@ This API considers the types defined by [MESSAGING-API](/standards/application/m
 
 ```yaml
 types:
+  ReliableSendId:
+    type: string
+    description: "Unique identifier for a single `send` operation on a reliable channel.
+    It groups all chunks produced by segmenting one envelope, so callers can correlate
+    acknowledgement and error events back to the original send call.
+    Internally, each chunk is dispatched as an independent [MESSAGING-API](/standards/application/messaging-api.md) call,
+    producing one `RequestId` (as defined in [MESSAGING-API](/standards/application/messaging-api.md)) per chunk.
+    A single `ReliableSendId` therefore maps to one or more underlying `RequestId` values,
+    one per chunk sent."
+
   IEncryption:
     type: object
     description: "Interface for a pluggable encryption mechanism.
@@ -206,8 +216,8 @@ types:
     description: "Event emitted when a complete message has been received and reassembled."
     fields:
       requestId:
-        type: RequestId
-        description: "Identifier of the `send` operation that initiated the message sending. `RequestId` is defined in [MESSAGING-API](./messaging-api.md)."
+        type: ReliableSendId
+        description: "Identifier of the `send` operation that produced this message."
       envelope:
         type: ReliableEnvelope
         description: "The reassembled message and its channel context. `envelope.messageEnvelope.payload` contains the fully reassembled content; `envelope.channelId` identifies the channel on which it arrived."
@@ -217,16 +227,16 @@ types:
     description: "Event emitted when all chunks of a message have been acknowledged by the network."
     fields:
       requestId:
-        type: RequestId
-        description: "The request ID associated with the sent message. `RequestId` is defined in [MESSAGING-API](./messaging-api.md)."
+        type: ReliableSendId
+        description: "The identifier of the `send` operation whose chunks have all been acknowledged."
 
   EventMessageSendError:
     type: object
     description: "Event emitted when a message send operation fails after exhausting retransmission attempts."
     fields:
       requestId:
-        type: RequestId
-        description: "The request ID associated with the failed message. `RequestId` is defined in [MESSAGING-API](./messaging-api.md)."
+        type: ReliableSendId
+        description: "The identifier of the `send` operation that failed after exhausting retransmission attempts."
       error:
         type: string
         description: "Error message describing what went wrong"
@@ -298,8 +308,8 @@ functions:
         type: ReliableEnvelope
         description: "The envelope containing the message and channel routing information."
     returns:
-      type: result<RequestId, error>
-      description: "`RequestId` is defined in [MESSAGING-API](./messaging-api.md)."
+      type: result<ReliableSendId, error>
+      description: "Returns a `ReliableSendId` that callers can use to correlate subsequent `MessageSentEvent` or `MessageSendErrorEvent` events."
 ```
 
 Incoming events are emitted on `ReliableChannel.messageEvents` as defined by `MessageEvents`.
