@@ -55,7 +55,7 @@ This API addresses that gap by introducing:
 - **[SEGMENTATION-API](/standards/application/segmentation-api.md)** to handle large messages exceeding network size limits.
 - **[SDS](https://lip.logos.co/ift-ts/raw/sds.html)** to provide causal-history-based end-to-end acknowledgement and retransmission.
 - **Rate Limit Manager** to comply with [RLN](https://lip.logos.co/messaging/standards/core/17/rln-relay.html) constraints when sending segmented messages.
-- **Encryption Hook** to allow upper layers to provide a pluggable encryption mechanism. The main motivation for encryption is to protect the payload and content_topic from MessageEnvelope, defined in [MESSAGING-API](/standards/application/messaging-api.md). 
+- **Encryption Hook** to allow upper layers to provide a pluggable encryption mechanism. The main motivation for encryption is to protect the payload. 
 
 The separation between Reliable Channels and encryption ensures the API remains agnostic to identity and key management concerns,
 which are handled by higher layers.
@@ -130,9 +130,18 @@ The Encryption Hook provides a pluggable interface for upper layers to inject en
 
 ## Procedures
 
+### State management
+
+Each `ReliableChannel` MUST maintain internal state for [SDS](https://lip.logos.co/ift-ts/raw/sds.html), keyed by `channelId`. This state MAY be persisted within the SDS implementation layer and includes:
+- A committed message log recording sent messages and their acknowledgement status.
+- An outgoing buffer of unacknowledged message chunks pending confirmation.
+- An incoming buffer for partially received segmented messages awaiting full reassembly.
+
+The state MUST be persisted using the `persistence` backend specified in `SdsConfig`.
+
 ### Outgoing message processing
 
-When `send` is called, the implementation MUST process `message.payload` in the following order:
+When `send` is called, the implementation MUST process `message` in the following order:
 
 1. **Segment**: Split the payload into chunks as defined in [SEGMENTATION-API](./segmentation-api.md).
 2. **Apply [SDS](https://lip.logos.co/ift-ts/raw/sds.html)**: Register each chunk with the SDS layer to track acknowledgements and enable retransmission.
@@ -179,7 +188,7 @@ types:
   ReliableSendId:
     type: string
     description: "Unique identifier for a single `send` operation on a reliable channel.
-    It groups all chunks produced by segmenting one envelope, so callers can correlate
+    It groups all chunks produced by segmenting one message, so callers can correlate
     acknowledgement and error events back to the original send call.
     Internally, each chunk is dispatched as an independent [MESSAGING-API](/standards/application/messaging-api.md) call,
     producing one `RequestId` (as defined in [MESSAGING-API](/standards/application/messaging-api.md)) per chunk.
@@ -217,7 +226,7 @@ types:
 
   ReliableChannel:
     type: object
-    description: "An opaque handle representing a reliable channel.
+    description: "A handle representing an open reliable channel.
     Returned by `createReliableChannel` and used to send messages and receive events.
     Internal state (SDS, segmentation, encryption) is managed by the implementation."
     fields:
@@ -274,12 +283,9 @@ types:
     type: object
     description: "Event emitted when a complete message has been received and reassembled."
     fields:
-      requestId:
-        type: ReliableSendId
-        description: "Identifier of the `send` operation that produced this message."
       message:
-        type: MessageEnvelope
-        description: "The reassembled message. Defined in [MESSAGING-API](/standards/application/messaging-api.md)."
+        type: array<byte>
+        description: "The reassembled message payload."
 
   MessageSentEvent:
     type: object
@@ -318,10 +324,9 @@ types:
 functions:
 
   createReliableChannel:
-    description: "Opens a reliable channel over the given content topics. Sets up the required SDS state,
-    segmentation, and encryption, and subscribes to `contentTopics` via the underlying
-    [MESSAGING-API](/standards/application/messaging-api.md) so that incoming chunks are
-    routed through the incoming processing pipeline (see Procedures)."
+    description: "Opens a reliable channel over the given content topic. Sets up the required SDS state,
+    segmentation, and encryption, and subscribes to `contentTopic` via the underlying
+    [MESSAGING-API](/standards/application/messaging-api.md)."
     parameters:
       - name: node
         type: WakuNode
@@ -329,10 +334,10 @@ functions:
         Used to send chunks and to subscribe/unsubscribe to the content topics."
       - name: channelId
         type: string
-        description: "Unique identifier for this channel."
-      - name: contentTopics
-        type: seq<string>
-        description: "The content topics this channel listens and sends on."
+        description: "Unique identifier for this channel. Represents the reliable (SDS), segmented, and optionally-encrypted session."
+      - name: contentTopic
+        type: string
+        description: "The topic this channel listens and sends on. This has routing and filtering connotations."
       - name: channelConfig
         type: ReliableChannelConfig
         description: "Configuration for the channel."
@@ -348,7 +353,7 @@ functions:
 
   closeChannel:
     description: "Closes a reliable channel, releases all associated resources and internal state,
-    and unsubscribes from its content topics via the underlying [MESSAGING-API](/standards/application/messaging-api.md)."
+    and unsubscribes from its content topic via the underlying [MESSAGING-API](/standards/application/messaging-api.md)."
     parameters:
       - name: channel
         type: ReliableChannel
@@ -369,8 +374,8 @@ functions:
         type: ReliableChannel
         description: "The channel handle returned by `createReliableChannel`."
       - name: message
-        type: MessageEnvelope
-        description: "The message to send. `message.content_topic` MUST be one of the topics the channel was opened with."
+        type: array<byte>
+        description: "The raw message payload to send."
     returns:
       type: result<ReliableSendId, error>
       description: "Returns a `ReliableSendId` that callers can use to correlate subsequent `MessageSentEvent` or `MessageSendErrorEvent` events."
