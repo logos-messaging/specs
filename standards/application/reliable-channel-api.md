@@ -215,17 +215,6 @@ types:
     Implementations MUST provide all functions required to save and retrieve SDS state per channel. Implementations MUST also provide the persistence method of interest, e.g., SQLite, custom encrypted storage, etc.
     Refer to the [SDS spec](https://lip.logos.co/ift-ts/raw/sds.html) for the full definition of what state must be persisted."
 
-  ReliableChannel:
-    type: object
-    description: "An entity that guarantees message delivery among all participants on a single content topic."
-    fields:
-      channelId:
-        type: string
-        description: "Unique identifier"
-      messageEvents:
-        type: MessageEvents
-        description: "Event emitter for message-related events on this channel"
-
   ReliableChannelConfig:
     type: object
     fields:
@@ -319,8 +308,18 @@ types:
 functions:
 
   createReliableChannel:
-    description: "Opens a reliable channel. Sets up the required SDS state, segmentation, and encryption."
+    description: "Opens a reliable channel for the given content topic. Sets up the required SDS state,
+    segmentation, and encryption, and subscribes to `contentTopic` via the underlying
+    [MESSAGING-API](/standards/application/messaging-api.md) so that incoming chunks are
+    routed through the incoming processing pipeline (see Procedures)."
     parameters:
+      - name: node
+        type: WakuNode
+        description: "The underlying messaging node, as defined in [MESSAGING-API](/standards/application/messaging-api.md).
+        Used to send chunks and to subscribe/unsubscribe to the content topic."
+      - name: contentTopic
+        type: string
+        description: "The content topic this channel listens and sends on."
       - name: channelConfig
         type: ReliableChannelConfig
         description: "Configuration for the channel."
@@ -332,14 +331,16 @@ functions:
         default: none
         description: "Optional pluggable encryption implementation. If none, messages are sent unencrypted."
     returns:
-      type: result<ReliableChannel, error>
+      type: result<void, error>
 
   closeChannel:
-    description: "Closes a reliable channel and releases all associated resources and internal state."
+    description: "Closes the reliable channel associated with the given content topic,
+    releases all associated resources and internal state,
+    and unsubscribes from `contentTopic` via the underlying [MESSAGING-API](/standards/application/messaging-api.md)."
     parameters:
-      - name: channel
-        type: ReliableChannel
-        description: "The channel to close."
+      - name: contentTopic
+        type: string
+        description: "The content topic identifying the channel to close. MUST match the one passed to `createReliableChannel`."
     returns:
       type: result<void, error>
 ```
@@ -349,17 +350,22 @@ functions:
 ```yaml
 functions:
   send:
-    description: "Send a message through the reliable channel. The message is always segmented, SDS-tracked, rate-limited, and encrypted (if configured)."
+    description: "Send a message through the reliable channel registered for `message.content_topic`.
+    The message is always segmented, SDS-tracked, rate-limited, and encrypted (if configured).
+    MUST return an error if no channel has been created for `message.content_topic`."
     parameters:
+      - name: node
+        type: WakuNode
+        description: "The underlying messaging node, as defined in [MESSAGING-API](/standards/application/messaging-api.md)."
       - name: message
         type: MessageEnvelope
-        description: "The message to send. Defined in [MESSAGING-API](/standards/application/messaging-api.md)."
+        description: "The message to send. `message.content_topic` is used to resolve the channel internally."
     returns:
       type: result<ReliableSendId, error>
       description: "Returns a `ReliableSendId` that callers can use to correlate subsequent `MessageSentEvent` or `MessageSendErrorEvent` events."
 ```
 
-Incoming events are emitted on `ReliableChannel.messageEvents` as defined by `MessageEvents`.
+Incoming events are emitted on the `node.messageEvents` event emitter, as defined by `MessageEvents` in [MESSAGING-API](/standards/application/messaging-api.md), filtered to the channel's content topic.
 
 ## Security/Privacy Considerations
 
