@@ -132,7 +132,7 @@ The Encryption Hook provides a pluggable interface for upper layers to inject en
 
 ### Outgoing message processing
 
-When `send` is called with a `ReliableEnvelope` whose `channelId` is non-empty, the implementation MUST process `envelope.messageEnvelope.payload` in the following order:
+When `send` is called, the implementation MUST process `message.payload` in the following order:
 
 1. **Segment**: Split the payload into chunks as defined in [SEGMENTATION-API](./segmentation-api.md).
 2. **Apply [SDS](https://lip.logos.co/ift-ts/raw/sds.html)**: Register each chunk with the SDS layer to track acknowledgements and enable retransmission.
@@ -215,23 +215,6 @@ types:
     Implementations MUST provide all functions required to save and retrieve SDS state per channel. Implementations MUST also provide the persistence method of interest, e.g., SQLite, custom encrypted storage, etc.
     Refer to the [SDS spec](https://lip.logos.co/ift-ts/raw/sds.html) for the full definition of what state must be persisted."
 
-  ReliableEnvelope:
-    type: object
-    description: "Wraps a MessageEnvelope (defined in [MESSAGING-API](/standards/application/messaging-api.md)) with a reliable channel identifier.
-    An empty channelId marks the message as ephemeral; a non-empty value routes it through the named reliable channel for segmentation, SDS tracking, and encryption."
-    fields:
-      messageEnvelope:
-        type: MessageEnvelope
-        description: "The message payload and metadata. Refer to [MESSAGING-API](/standards/application/messaging-api.md) for details."
-      channelId:
-        type: string
-        default: ""
-        description: "Reliable channel identifier.
-        If empty, the message is ephemeral: not tracked by SDS, never retransmitted, and NEVER segmented.
-        Ephemeral payloads exceeding the network size limit MUST be rejected with an error.
-        When the rate limit is approached, ephemeral messages are dropped immediately rather than queued.
-        If non-empty, the messageEnvelope is segmented, registered with SDS, and encrypted under the named reliable channel."
-
   ReliableChannel:
     type: object
     description: "An entity that guarantees message delivery among all participants on a single content topic."
@@ -295,9 +278,9 @@ types:
       requestId:
         type: ReliableSendId
         description: "Identifier of the `send` operation that produced this message."
-      envelope:
-        type: ReliableEnvelope
-        description: "The reassembled message and its channel context. `envelope.messageEnvelope.payload` contains the fully reassembled content; `envelope.channelId` identifies the channel on which it arrived."
+      message:
+        type: MessageEnvelope
+        description: "The reassembled message. Defined in [MESSAGING-API](/standards/application/messaging-api.md)."
 
   MessageSentEvent:
     type: object
@@ -366,11 +349,11 @@ functions:
 ```yaml
 functions:
   send:
-    description: "Send a message through the reliable channel API. Routing and guarantees are determined by the envelope's channelId: empty means ephemeral; non-empty applies segmentation, SDS, and encryption (if configured) before dispatching."
+    description: "Send a message through the reliable channel. The message is always segmented, SDS-tracked, rate-limited, and encrypted (if configured)."
     parameters:
-      - name: envelope
-        type: ReliableEnvelope
-        description: "The envelope containing the message and channel routing information."
+      - name: message
+        type: MessageEnvelope
+        description: "The message to send. Defined in [MESSAGING-API](/standards/application/messaging-api.md)."
     returns:
       type: result<ReliableSendId, error>
       description: "Returns a `ReliableSendId` that callers can use to correlate subsequent `MessageSentEvent` or `MessageSendErrorEvent` events."
