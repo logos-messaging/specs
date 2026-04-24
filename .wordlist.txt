@@ -148,6 +148,7 @@ Raya's
 ReliableChannel
 ReliableChannelConfig
 ReliableEnvelope
+ReliableSendId
 ReliableIrretrievableMessageEvent
 ReliableMessageAcknowledgedEvent
 ReliableMessageEvents
