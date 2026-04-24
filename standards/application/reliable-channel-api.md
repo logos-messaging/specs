@@ -15,17 +15,24 @@ editor: Logos Messaging Team
   * [Motivation](#motivation)
   * [Syntax](#syntax)
   * [API design](#api-design)
-    * [IDL](#idl)
     * [Architectural position](#architectural-position)
-  * [The Reliable Channel API](#the-reliable-channel-api)
-    * [Type definitions](#type-definitions)
-    * [Channel lifecycle](#channel-lifecycle)
-    * [Channel usage](#channel-usage)
+    * [IDL](#idl)
   * [Components](#components)
     * [Segmentation](#segmentation)
     * [Scalable Data Sync (SDS)](#scalable-data-sync-sds)
     * [Rate Limit Manager](#rate-limit-manager)
     * [Encryption Hook](#encryption-hook)
+  * [Procedures](#procedures)
+    * [State management](#state-management)
+    * [Outgoing message processing](#outgoing-message-processing)
+    * [Incoming message processing](#incoming-message-processing)
+    * [Retransmission](#retransmission)
+    * [Rate limiting](#rate-limiting)
+    * [Encryption](#encryption)
+  * [The Reliable Channel API](#the-reliable-channel-api)
+    * [Type definitions](#type-definitions)
+    * [Channel lifecycle](#channel-lifecycle)
+    * [Channel usage](#channel-usage)
   * [Security/Privacy Considerations](#securityprivacy-considerations)
   * [Copyright](#copyright)
 <!-- TOC -->
@@ -60,10 +67,6 @@ The keywords "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SH
 
 ## API design
 
-### IDL
-
-A custom Interface Definition Language (IDL) in YAML is used, consistent with [MESSAGING-API](/standards/application/messaging-api.md).
-
 ### Architectural position
 
 The Reliable Channel API sits between the application layer and the Messaging API, as follows:
@@ -86,6 +89,84 @@ The Reliable Channel API sits between the application layer and the Messaging AP
 │      (P2P Reliability, Relay, Filter, Lightpush, Store)    │
 └────────────────────────────────────────────────────────────┘
 ```
+
+### IDL
+
+A custom Interface Definition Language (IDL) in YAML is used, consistent with [MESSAGING-API](/standards/application/messaging-api.md).
+
+## Components
+
+### Segmentation
+
+See [SEGMENTATION-API](./segmentation-api.md).
+
+### Scalable Data Sync (SDS)
+
+[SDS](https://lip.logos.co/ift-ts/raw/sds.html) provides end-to-end delivery guarantees using causal history tracking.
+
+- Each sent chunk is registered in an outgoing buffer.
+- The recipient sends acknowledgements back to the sender upon receiving chunks.
+- The sender removes acknowledged chunks from the outgoing buffer.
+- Unacknowledged chunks are retransmitted after `acknowledgementTimeoutMs`.
+- SDS state MUST be persisted using the `persistence` backend configured in `SdsConfig`.
+
+### Rate Limit Manager
+
+The Rate Limit Manager ensures compliance with [RLN](https://lip.logos.co/messaging/standards/core/17/rln-relay.html) rate constraints.
+
+- It tracks how many messages have been sent in the current epoch (only the first chunk of each message counts toward the rate limit; subsequent chunks are exempt).
+- When the limit is approached, chunk dispatch MUST be delayed to the next epoch.
+- The epoch size MUST match the `epochSizeMs` configured in `RateLimitConfig`.
+
+### Encryption Hook
+
+The Encryption Hook provides a pluggable interface for upper layers to inject encryption.
+
+- The hook is optional; when not provided, messages are sent unencrypted.
+- Encryption is applied per chunk, after segmentation and SDS registration.
+- Decryption is applied per chunk, before SDS delivery.
+- The `IEncryption` interface MUST be implemented by the caller.
+- The Reliable Channel API MUST NOT impose any specific encryption scheme.
+
+## Procedures
+
+### Outgoing message processing
+
+When `send` is called with a `ReliableEnvelope` whose `channelId` is non-empty, the implementation MUST process `envelope.messageEnvelope.payload` in the following order:
+
+1. **Segment**: Split the payload into chunks as defined in [SEGMENTATION-API](./segmentation-api.md).
+2. **Apply [SDS](https://lip.logos.co/ift-ts/raw/sds.html)**: Register each chunk with the SDS layer to track acknowledgements and enable retransmission.
+3. **Encrypt**: If an `IEncryption` implementation is provided, encrypt each chunk before transmission.
+4. **Rate Limit**: If `RateLimitConfig.enabled` is `true`, delay dispatch as needed to comply with [RLN](https://lip.logos.co/messaging/standards/core/17/rln-relay.html) epoch constraints.
+5. **Dispatch**: Send each chunk via the underlying [MESSAGING-API](/standards/application/messaging-api.md).
+
+### Incoming message processing
+
+When a chunk is received from the network, the implementation MUST process it in the following order:
+
+1. **Decrypt**: If an `IEncryption` implementation is provided, decrypt the chunk.
+2. **Apply [SDS](https://lip.logos.co/ift-ts/raw/sds.html)**: Deliver the chunk to the SDS layer, which emits acknowledgements and detects gaps.
+3. **Reassemble**: Once all chunks for a message have been received, reassemble and emit a `reliable:message:received` event.
+
+### Retransmission
+
+A certain Reliable Channel MUST retransmit unacknowledged chunks after `acknowledgementTimeoutMs`,
+according to the [SDS](https://lip.logos.co/ift-ts/raw/sds.html) channel state,
+up to `maxRetransmissions` times.
+If a chunk is not acknowledged after all retransmission attempts, a `reliable:message:send-error` event MUST be emitted.
+
+### Rate limiting
+
+When `RateLimitConfig.enabled` is `true`, the implementation MUST space chunk transmissions
+to comply with the [RLN](https://lip.logos.co/messaging/standards/core/17/rln-relay.html) epoch constraints defined in `epochSizeMs`.
+Chunks MUST NOT be sent at a rate that would violate the RLN message rate limit for the active epoch.
+
+### Encryption
+
+The `encryption` field in `ReliableChannelConfig` is intentionally optional.
+The Reliable Channel API is agnostic to encryption mechanisms.
+
+When an `IEncryption` implementation is provided, it MUST be applied as described in [Outgoing message processing](#outgoing-message-processing) and [Incoming message processing](#incoming-message-processing).
 
 ## The Reliable Channel API
 
@@ -280,23 +361,6 @@ functions:
       type: result<void, error>
 ```
 
-**State management**:
-
-Each `ReliableChannel` MUST maintain internal state for [SDS](https://lip.logos.co/ift-ts/raw/sds.html). This state MAY be persisted within SDS implementation layer and includes:
-- A committed message log recording sent messages and their acknowledgement status.
-- An outgoing buffer of unacknowledged message chunks pending confirmation.
-- An incoming buffer for partially received segmented messages awaiting full reassembly.
-
-The state MUST be persisted using the `persistence` backend specified in `SdsConfig`.
-
-
-**Encryption**:
-
-The `encryption` field in `ReliableChannelConfig` is intentionally optional.
-The Reliable Channel API is agnostic to encryption mechanisms.
-
-When an `IEncryption` implementation is provided, it MUST be applied as described in [Channel usage](#channel-usage).
-
 ### Channel usage
 
 ```yaml
@@ -313,71 +377,6 @@ functions:
 ```
 
 Incoming events are emitted on `ReliableChannel.messageEvents` as defined by `MessageEvents`.
-
-**Outgoing message processing order**:
-
-When `send` is called with a `ReliableEnvelope` whose `channelId` is non-empty, the implementation MUST process `envelope.messageEnvelope.payload` in the following order:
-
-1. **Segment**: Split the payload into chunks as defined in [SEGMENTATION-API](./segmentation-api.md).
-2. **Apply [SDS](https://lip.logos.co/ift-ts/raw/sds.html)**: Register each chunk with the SDS layer to track acknowledgements and enable retransmission.
-3. **Encrypt**: If an `IEncryption` implementation is provided, encrypt each chunk before transmission.
-4. **Rate Limit**: If `RateLimitConfig.enabled` is `true`, delay dispatch as needed to comply with [RLN](https://lip.logos.co/messaging/standards/core/17/rln-relay.html) epoch constraints.
-5. **Dispatch**: Send each chunk via the underlying [MESSAGING-API](/standards/application/messaging-api.md).
-
-**Incoming message processing order**:
-
-When a chunk is received from the network, the implementation MUST process it in the following order:
-
-1. **Decrypt**: If an `IEncryption` implementation is provided, decrypt the chunk.
-2. **Apply [SDS](https://lip.logos.co/ift-ts/raw/sds.html)**: Deliver the chunk to the SDS layer, which emits acknowledgements and detects gaps.
-3. **Reassemble**: Once all chunks for a message have been received, reassemble and emit a `reliable:message:received` event.
-
-**Retransmission**:
-
-A certain Reliable Channel MUST retransmit unacknowledged chunks after `acknowledgementTimeoutMs`,
-according to the [SDS](https://lip.logos.co/ift-ts/raw/sds.html) channel state,
-up to `maxRetransmissions` times.
-If a chunk is not acknowledged after all retransmission attempts, a `reliable:message:send-error` event MUST be emitted.
-
-**Rate limiting**:
-
-When `RateLimitConfig.enabled` is `true`, the implementation MUST space chunk transmissions
-to comply with the [RLN](https://lip.logos.co/messaging/standards/core/17/rln-relay.html) epoch constraints defined in `epochSizeMs`.
-Chunks MUST NOT be sent at a rate that would violate the RLN message rate limit for the active epoch.
-
-## Components
-
-### Segmentation
-
-See [SEGMENTATION-API](./segmentation-api.md).
-
-### Scalable Data Sync (SDS)
-
-[SDS](https://lip.logos.co/ift-ts/raw/sds.html) provides end-to-end delivery guarantees using causal history tracking.
-
-- Each sent chunk is registered in an outgoing buffer.
-- The recipient sends acknowledgements back to the sender upon receiving chunks.
-- The sender removes acknowledged chunks from the outgoing buffer.
-- Unacknowledged chunks are retransmitted after `acknowledgementTimeoutMs`.
-- SDS state MUST be persisted using the `persistence` backend configured in `SdsConfig`.
-
-### Rate Limit Manager
-
-The Rate Limit Manager ensures compliance with [RLN](https://lip.logos.co/messaging/standards/core/17/rln-relay.html) rate constraints.
-
-- It tracks how many messages have been sent in the current epoch (only the first chunk of each message counts toward the rate limit; subsequent chunks are exempt).
-- When the limit is approached, chunk dispatch MUST be delayed to the next epoch.
-- The epoch size MUST match the `epochSizeMs` configured in `RateLimitConfig`.
-
-### Encryption Hook
-
-The Encryption Hook provides a pluggable interface for upper layers to inject encryption.
-
-- The hook is optional; when not provided, messages are sent unencrypted.
-- Encryption is applied per chunk, after segmentation and SDS registration.
-- Decryption is applied per chunk, before SDS delivery.
-- The `IEncryption` interface MUST be implemented by the caller.
-- The Reliable Channel API MUST NOT impose any specific encryption scheme.
 
 ## Security/Privacy Considerations
 
