@@ -215,6 +215,16 @@ types:
     Implementations MUST provide all functions required to save and retrieve SDS state per channel. Implementations MUST also provide the persistence method of interest, e.g., SQLite, custom encrypted storage, etc.
     Refer to the [SDS spec](https://lip.logos.co/ift-ts/raw/sds.html) for the full definition of what state must be persisted."
 
+  ReliableChannel:
+    type: object
+    description: "An opaque handle representing a reliable channel.
+    Returned by `createReliableChannel` and used to send messages and receive events.
+    Internal state (SDS, segmentation, encryption) is managed by the implementation."
+    fields:
+      messageEvents:
+        type: MessageEvents
+        description: "Event emitter for reliable message events scoped to this channel."
+
   ReliableChannelConfig:
     type: object
     fields:
@@ -308,18 +318,21 @@ types:
 functions:
 
   createReliableChannel:
-    description: "Opens a reliable channel for the given content topic. Sets up the required SDS state,
-    segmentation, and encryption, and subscribes to `contentTopic` via the underlying
+    description: "Opens a reliable channel over the given content topics. Sets up the required SDS state,
+    segmentation, and encryption, and subscribes to `contentTopics` via the underlying
     [MESSAGING-API](/standards/application/messaging-api.md) so that incoming chunks are
     routed through the incoming processing pipeline (see Procedures)."
     parameters:
       - name: node
         type: WakuNode
         description: "The underlying messaging node, as defined in [MESSAGING-API](/standards/application/messaging-api.md).
-        Used to send chunks and to subscribe/unsubscribe to the content topic."
-      - name: contentTopic
+        Used to send chunks and to subscribe/unsubscribe to the content topics."
+      - name: channelId
         type: string
-        description: "The content topic this channel listens and sends on."
+        description: "Unique identifier for this channel."
+      - name: contentTopics
+        type: seq<string>
+        description: "The content topics this channel listens and sends on."
       - name: channelConfig
         type: ReliableChannelConfig
         description: "Configuration for the channel."
@@ -331,16 +344,15 @@ functions:
         default: none
         description: "Optional pluggable encryption implementation. If none, messages are sent unencrypted."
     returns:
-      type: result<void, error>
+      type: result<ReliableChannel, error>
 
   closeChannel:
-    description: "Closes the reliable channel associated with the given content topic,
-    releases all associated resources and internal state,
-    and unsubscribes from `contentTopic` via the underlying [MESSAGING-API](/standards/application/messaging-api.md)."
+    description: "Closes a reliable channel, releases all associated resources and internal state,
+    and unsubscribes from its content topics via the underlying [MESSAGING-API](/standards/application/messaging-api.md)."
     parameters:
-      - name: contentTopic
-        type: string
-        description: "The content topic identifying the channel to close. MUST match the one passed to `createReliableChannel`."
+      - name: channel
+        type: ReliableChannel
+        description: "The channel handle returned by `createReliableChannel`."
     returns:
       type: result<void, error>
 ```
@@ -350,22 +362,21 @@ functions:
 ```yaml
 functions:
   send:
-    description: "Send a message through the reliable channel registered for `message.content_topic`.
-    The message is always segmented, SDS-tracked, rate-limited, and encrypted (if configured).
-    MUST return an error if no channel has been created for `message.content_topic`."
+    description: "Send a message through a reliable channel. The message is always segmented,
+    SDS-tracked, rate-limited, and encrypted (if configured)."
     parameters:
-      - name: node
-        type: WakuNode
-        description: "The underlying messaging node, as defined in [MESSAGING-API](/standards/application/messaging-api.md)."
+      - name: channel
+        type: ReliableChannel
+        description: "The channel handle returned by `createReliableChannel`."
       - name: message
         type: MessageEnvelope
-        description: "The message to send. `message.content_topic` is used to resolve the channel internally."
+        description: "The message to send. `message.content_topic` MUST be one of the topics the channel was opened with."
     returns:
       type: result<ReliableSendId, error>
       description: "Returns a `ReliableSendId` that callers can use to correlate subsequent `MessageSentEvent` or `MessageSendErrorEvent` events."
 ```
 
-Incoming events are emitted on the `node.messageEvents` event emitter, as defined by `MessageEvents` in [MESSAGING-API](/standards/application/messaging-api.md), filtered to the channel's content topic.
+Incoming events are emitted on `channel.messageEvents` as defined by `MessageEvents`.
 
 ## Security/Privacy Considerations
 
