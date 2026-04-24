@@ -212,7 +212,7 @@ types:
         type: ReliableEnvelope
         description: "The reassembled message and its channel context. `envelope.messageEnvelope.payload` contains the fully reassembled content; `envelope.channelId` identifies the channel on which it arrived."
 
-  EventReliableMessageSent:
+  EventMessageSent:
     type: object
     description: "Event emitted when all chunks of a message have been acknowledged by the network."
     fields:
@@ -277,7 +277,7 @@ Each `ReliableChannel` MUST maintain internal state for [SDS](https://lip.logos.
 - An outgoing buffer of unacknowledged message chunks pending confirmation.
 - An incoming buffer for partially received segmented messages awaiting full reassembly.
 
-The state MUST be persisted using to the `persistence` tool specified in `SdsConfig`.
+The state MUST be persisted using the `persistence` backend specified in `SdsConfig`.
 The default `memory` backend does not survive process restarts; implementors providing persistence SHOULD use a durable backend.
 
 **Encryption**:
@@ -311,7 +311,8 @@ When `send` is called with a `ReliableEnvelope` whose `channelId` is non-empty, 
 1. **Segment**: Split the payload into chunks as defined in [SEGMENTATION-API](./segmentation-api.md).
 2. **Apply [SDS](https://lip.logos.co/ift-ts/raw/sds.html)**: Register each chunk with the SDS layer to track acknowledgements and enable retransmission.
 3. **Encrypt**: If an `IEncryption` implementation is provided, encrypt each chunk before transmission.
-4. **Dispatch**: Send each chunk via the underlying [MESSAGING-API](/standards/application/messaging-api.md).
+4. **Rate Limit**: If `RateLimitConfig.enabled` is `true`, delay dispatch as needed to comply with [RLN](https://lip.logos.co/messaging/standards/core/17/rln-relay.html) epoch constraints.
+5. **Dispatch**: Send each chunk via the underlying [MESSAGING-API](/standards/application/messaging-api.md).
 
 **Incoming message processing order**:
 
@@ -348,7 +349,7 @@ See [SEGMENTATION-API](./segmentation-api.md).
 - The recipient sends acknowledgements back to the sender upon receiving chunks.
 - The sender removes acknowledged chunks from the outgoing buffer.
 - Unacknowledged chunks are retransmitted after `acknowledgementTimeoutMs`.
-- SDS state MUST be persisted in the configured `historyBackend`.
+- SDS state MUST be persisted using the `persistence` backend configured in `SdsConfig`.
 
 ### Rate Limit Manager
 
