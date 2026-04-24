@@ -211,7 +211,7 @@ types:
         default: 600000  # 10 minutes
         description: "The epoch size used by the RLN relay, in milliseconds."
 
-  EventMessageReceived:
+  MessageReceivedEvent:
     type: object
     description: "Event emitted when a complete message has been received and reassembled."
     fields:
@@ -222,7 +222,7 @@ types:
         type: ReliableEnvelope
         description: "The reassembled message and its channel context. `envelope.messageEnvelope.payload` contains the fully reassembled content; `envelope.channelId` identifies the channel on which it arrived."
 
-  EventMessageSent:
+  MessageSentEvent:
     type: object
     description: "Event emitted when all chunks of a message have been acknowledged by the network."
     fields:
@@ -230,7 +230,7 @@ types:
         type: ReliableSendId
         description: "The identifier of the `send` operation whose chunks have all been acknowledged."
 
-  EventMessageSendError:
+  MessageSendErrorEvent:
     type: object
     description: "Event emitted when a message send operation fails after exhausting retransmission attempts."
     fields:
@@ -246,11 +246,11 @@ types:
     description: "Event source for reliable message events on a channel"
     events:
       "reliable:message:received":
-        type: EventMessageReceived
+        type: MessageReceivedEvent
       "reliable:message:sent":
-        type: EventMessageSent
+        type: MessageSentEvent
       "reliable:message:send-error":
-        type: EventMessageSendError
+        type: MessageSendErrorEvent
 ```
 
 ### Channel lifecycle
