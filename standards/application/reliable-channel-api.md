@@ -197,10 +197,6 @@ types:
         type: MessageEvents
         description: "Event emitter for reliable message events scoped to this channel."
 
-      rateLimitConfig:
-        type: RateLimitConfig
-        default: DefaultRateLimitConfig
-        description: "Configuration for rate limit management."
 
   MessageEvents:
     type: event_emitter
