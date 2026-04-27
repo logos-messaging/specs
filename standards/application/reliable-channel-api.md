@@ -99,27 +99,27 @@ A custom Interface Definition Language (IDL) in YAML is used, consistent with [M
 
 When `send` is called, the implementation MUST process `message` in the following order:
 
-1. **Segment**: Split the payload into chunks as defined in [SEGMENTATION-API](./segmentation-api.md). The maximum chunk size MUST be reduced by the size of the SDS header added in step 2, so that each chunk together with its SDS header stays within the network message size limit.
-2. **Apply [SDS](https://lip.logos.co/ift-ts/raw/sds.html)**: Register each chunk with the SDS layer to track acknowledgements and enable retransmission.
-3. **Encrypt**: If an `Encryption` implementation is provided, encrypt each chunk before transmission.
+1. **Segment**: Split the payload into segments as defined in [SEGMENTATION-API](./segmentation-api.md). The maximum segment size MUST be reduced by the size of the SDS header added in step 2, so that each segment together with its SDS header stays within the network message size limit.
+2. **Apply [SDS](https://lip.logos.co/ift-ts/raw/sds.html)**: Register each segment with the SDS layer to track acknowledgements and enable retransmission.
+3. **Encrypt**: If an `Encryption` implementation is provided, encrypt each segment before transmission.
 4. **Rate Limit**: If `RateLimitConfig.enabled` is `true`, delay dispatch as needed to comply with [RLN](https://lip.logos.co/messaging/standards/core/17/rln-relay.html) epoch constraints.
-5. **Dispatch**: Send each chunk via the underlying [MESSAGING-API](/standards/application/messaging-api.md).
+5. **Dispatch**: Send each segment via the underlying [MESSAGING-API](/standards/application/messaging-api.md).
 
 ### Incoming message processing
 
-When a chunk is received from the network, the implementation MUST process it in the following order:
+When a segment is received from the network, the implementation MUST process it in the following order:
 
-1. **Decrypt**: If an `Encryption` implementation is provided, decrypt the chunk.
-2. **Apply [SDS](https://lip.logos.co/ift-ts/raw/sds.html)**: Deliver the chunk to the SDS layer, which emits acknowledgements and detects gaps.
-   - **2.1. Detect missing dependencies**: If SDS detects a gap in the causal history (i.e., a referenced predecessor chunk has not yet been received), the implementation MUST attempt to retrieve the missing chunk.
-   - **2.2. Fetch from store**: The implementation MUST provide a mechanism to extract a retrieval hint from the received chunk (e.g., a store cursor or message hash embedded in the SDS causal history). The missing chunk MUST then be fetched from a store node via the [MESSAGING-API](/standards/application/messaging-api.md) store query, and re-injected into the incoming processing pipeline from step 1.
-3. **Reassemble**: Once all chunks for a message have been received, reassemble and emit a `reliable:message:received` event.
+1. **Decrypt**: If an `Encryption` implementation is provided, decrypt the segment.
+2. **Apply [SDS](https://lip.logos.co/ift-ts/raw/sds.html)**: Deliver the segment to the SDS layer, which emits acknowledgements and detects gaps.
+   - **2.1. Detect missing dependencies**: If SDS detects a gap in the causal history (i.e., a referenced predecessor segment has not yet been received), the implementation MUST attempt to retrieve the missing segment.
+   - **2.2. Fetch from store**: The implementation MUST provide a mechanism to extract a retrieval hint from the received segment (e.g., a store cursor or message hash embedded in the SDS causal history). The missing segment MUST then be fetched from a store node via the [MESSAGING-API](/standards/application/messaging-api.md) store query, and re-injected into the incoming processing pipeline from step 1.
+3. **Reassemble**: Once all segments for a message have been received, reassemble and emit a `reliable:message:received` event.
 
 ### Rate limiting
 
-When `RateLimitConfig.enabled` is `true`, the implementation MUST space chunk transmissions
+When `RateLimitConfig.enabled` is `true`, the implementation MUST space segment transmissions
 to comply with the [RLN](https://lip.logos.co/messaging/standards/core/17/rln-relay.html) epoch constraints defined in `epochSizeMs`.
-Chunks MUST NOT be sent at a rate that would violate the RLN message rate limit for the active epoch.
+Segments MUST NOT be sent at a rate that would violate the RLN message rate limit for the active epoch.
 
 ### Encryption
 
@@ -147,7 +147,7 @@ functions:
       - name: node
         type: WakuNode
         description: "The underlying messaging node, as defined in [MESSAGING-API](/standards/application/messaging-api.md).
-        Used to send chunks and to subscribe/unsubscribe to the content topics."
+        Used to send segments and to subscribe/unsubscribe to the content topics."
       - name: channelId
         type: string
         description: "Unique identifier for this channel. Represents the reliable (SDS), segmented, and optionally-encrypted session."
@@ -209,7 +209,7 @@ functions:
       type: result<void, error>
 
   onMessageSent:
-    description: "Subscribes a callback to be invoked when all chunks of a message have been transmitted to the network.
+    description: "Subscribes a callback to be invoked when all segments of a message have been transmitted to the network.
     This confirms network-level dispatch but does not guarantee the recipient has processed the message.
     For end-to-end confirmation, see `onMessageDelivered`."
     parameters:
@@ -218,7 +218,7 @@ functions:
         description: "The channel handle returned by `createReliableChannel`."
       - name: callback
         type: function
-        description: "Invoked when all chunks of a send operation are acknowledged by the network."
+        description: "Invoked when all segments of a send operation are acknowledged by the network."
         parameters:
           - name: event
             type: MessageSentEvent
@@ -309,13 +309,13 @@ types:
 
   MessageSentEvent:
     type: object
-    description: "Event emitted when all chunks of a message have been transmitted to the network.
+    description: "Event emitted when all segments of a message have been transmitted to the network.
     This confirms network-level dispatch only; it does not guarantee the recipient has processed the message.
     For end-to-end confirmation, listen for `MessageDeliveredEvent`."
     fields:
       requestId:
         type: ReliableSendId
-        description: "The identifier of the `send` operation whose chunks have all been dispatched to the network."
+        description: "The identifier of the `send` operation whose segments have all been dispatched to the network."
 
   MessageDeliveredEvent:
     type: object
@@ -340,12 +340,12 @@ types:
   ReliableSendId:
     type: string
     description: "Unique identifier for a single `send` operation on a reliable channel.
-    It groups all chunks produced by segmenting one message, so callers can correlate
+    It groups all segments produced by segmenting one message, so callers can correlate
     acknowledgement and error events back to the original send call.
-    Internally, each chunk is dispatched as an independent [MESSAGING-API](/standards/application/messaging-api.md) call,
-    producing one `RequestId` (as defined in [MESSAGING-API](/standards/application/messaging-api.md)) per chunk.
+    Internally, each segment is dispatched as an independent [MESSAGING-API](/standards/application/messaging-api.md) call,
+    producing one `RequestId` (as defined in [MESSAGING-API](/standards/application/messaging-api.md)) per segment.
     A single `ReliableSendId` therefore maps to one or more underlying `RequestId` values,
-    one per chunk sent."
+    one per segment sent."
 
   SdsConfig:
     type: object
@@ -420,18 +420,18 @@ See [SEGMENTATION-API](./segmentation-api.md).
 
 [SDS](https://lip.logos.co/ift-ts/raw/sds.html) provides end-to-end delivery guarantees using causal history tracking.
 
-- Each sent chunk is registered in an outgoing buffer.
-- The recipient sends acknowledgements back to the sender upon receiving chunks.
-- The sender removes acknowledged chunks from the outgoing buffer.
-- Unacknowledged chunks are retransmitted after `acknowledgementTimeoutMs`.
+- Each sent segment is registered in an outgoing buffer.
+- The recipient sends acknowledgements back to the sender upon receiving segments.
+- The sender removes acknowledged segments from the outgoing buffer.
+- Unacknowledged segments are retransmitted after `acknowledgementTimeoutMs`.
 - SDS state MUST be persisted using the `persistence` backend configured in `SdsConfig`.
 
 ### Rate Limit Manager
 
 The Rate Limit Manager ensures compliance with [RLN](https://lip.logos.co/messaging/standards/core/17/rln-relay.html) rate constraints.
 
-- It tracks how many messages have been sent in the current epoch (only the first chunk of each message counts toward the rate limit; subsequent chunks are exempt).
-- When the limit is approached, chunk dispatch MUST be delayed to the next epoch.
+- It tracks how many messages have been sent in the current epoch (only the first segment of each message counts toward the rate limit; subsequent segments are exempt).
+- When the limit is approached, segment dispatch MUST be delayed to the next epoch.
 - The epoch size MUST match the `epochSizeMs` configured in `RateLimitConfig`.
 
 ### Encryption Hook
@@ -439,15 +439,15 @@ The Rate Limit Manager ensures compliance with [RLN](https://lip.logos.co/messag
 The Encryption Hook provides a pluggable interface for upper layers to inject encryption.
 
 - The hook is optional; when not provided, messages are sent unencrypted.
-- Encryption is applied per chunk, after segmentation and SDS registration.
-- Decryption is applied per chunk, before SDS delivery.
+- Encryption is applied per segment, after segmentation and SDS registration.
+- Decryption is applied per segment, before SDS delivery.
 - The `Encryption` interface MUST be implemented by the caller.
 - The Reliable Channel API MUST NOT impose any specific encryption scheme.
 
 ## Security/Privacy Considerations
 
 - This API does not provide confidentiality by default. An `Encryption` implementation MUST be supplied when confidentiality is required.
-- Chunk metadata (message ID, chunk index, total chunks) is visible to network observers unless encrypted by the hook.
+- Segment metadata (message ID, segment index, total segments) is visible to network observers unless encrypted by the hook.
 - SDS acknowledgement messages are sent over the same content topic and are subject to the same confidentiality concerns.
 - Rate limiting compliance is required to avoid exclusion from the network by RLN-enforcing relays.
 
