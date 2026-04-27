@@ -179,7 +179,8 @@ When an `IEncryption` implementation is provided, it MUST be applied as describe
 
 ## The Reliable Channel API
 
-This API considers the types defined by [MESSAGING-API](/standards/application/messaging-api.md) plus the following.
+This API considers the types defined by [MESSAGING-API](/standards/application/messaging-api.md) plus the following (including `SdsConfig` and `RateLimitConfig`).
+It also extends `NodeConfig`, defined in [MESSAGING-API](/standards/application/messaging-api.md), with `sds_config` and `rate_limit_config` fields, whose types are defined here.
 
 ### Type definitions
 
@@ -234,22 +235,23 @@ types:
         type: MessageEvents
         description: "Event emitter for reliable message events scoped to this channel."
 
-  ReliableChannelConfig:
-    type: object
-    fields:
-      segmentationConfig:
-        type: SegmentationConfig
-        description: "Configuration for message segmentation. Refer to [SEGMENTATION-API](./segmentation-api.md) for details."
-      sdsConfig:
-        type: SdsConfig
-        description: "Configuration for Scalable Data Sync."
       rateLimitConfig:
         type: RateLimitConfig
         default: DefaultRateLimitConfig
         description: "Configuration for rate limit management."
 
+  NodeConfig:  # Extends NodeConfig defined in MESSAGING-API
+    fields:
+      sds_config:
+        type: SdsConfig
+        description: "SDS configuration. See SdsConfig defined in this spec."
+      rate_limit_config:
+        type: RateLimitConfig
+        description: "Rate limiting configuration, including RLN-specific attributes. See RateLimitConfig defined in this spec."
+
   SdsConfig:
     type: object
+    description: Scalable Data Sync config items.
     fields:
       persistence:
         type: IPersistence
@@ -269,10 +271,11 @@ types:
 
   RateLimitConfig:
     type: object
+    description: Rate limiting configuration, containing RLN-specific attributes.
     fields:
       enabled:
         type: bool
-        default: true
+        default: false
         description: "Whether rate limiting is enforced. SHOULD be true when RLN is active."
       epochSizeMs:
         type: uint
@@ -338,9 +341,6 @@ functions:
       - name: contentTopic
         type: string
         description: "The topic this channel listens and sends on. This has routing and filtering connotations."
-      - name: channelConfig
-        type: ReliableChannelConfig
-        description: "Configuration for the channel."
       - name: senderId
         type: string
         description: "An identifier for this sender. SHOULD be unique and persisted between sessions."
