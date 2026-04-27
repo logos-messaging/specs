@@ -20,7 +20,6 @@ editor: Logos Messaging Team
   * [Procedures](#procedures)
     * [Outgoing message processing](#outgoing-message-processing)
     * [Incoming message processing](#incoming-message-processing)
-    * [Retransmission](#retransmission)
     * [Rate limiting](#rate-limiting)
     * [Encryption](#encryption)
   * [The Reliable Channel API](#the-reliable-channel-api)
@@ -113,13 +112,6 @@ When a chunk is received from the network, the implementation MUST process it in
 1. **Decrypt**: If an `Encryption` implementation is provided, decrypt the chunk.
 2. **Apply [SDS](https://lip.logos.co/ift-ts/raw/sds.html)**: Deliver the chunk to the SDS layer, which emits acknowledgements and detects gaps.
 3. **Reassemble**: Once all chunks for a message have been received, reassemble and emit a `reliable:message:received` event.
-
-### Retransmission
-
-A certain Reliable Channel MUST retransmit unacknowledged chunks after `acknowledgementTimeoutMs`,
-according to the [SDS](https://lip.logos.co/ift-ts/raw/sds.html) channel state,
-up to `maxRetransmissions` times.
-If a chunk is not acknowledged after all retransmission attempts, a `reliable:message:send-error` event MUST be emitted.
 
 ### Rate limiting
 
