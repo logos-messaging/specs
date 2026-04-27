@@ -42,6 +42,7 @@ decrypt
 Decrypt
 decrypted
 Decrypts
+dataSegments
 DefaultAutoShardingConfig
 DefaultMessageValidation
 DefaultNetworkingConfig
@@ -51,6 +52,7 @@ DefaultSegmentationConfig
 dev
 dataSegments
 Deployability
+dev
 DHT
 discv
 DISCV
@@ -108,12 +110,12 @@ iterable
 Jazzz
 JSON
 keccak
+Keccak
 KiB
 Kozlov
 lifecycle
 liblogosdelivery
 libp
-Keccak
 libp2p
 Lightpush
 LIGHTPUSH
@@ -141,6 +143,8 @@ namespace
 NetworkConfig
 NetworkingConfig
 nim
+nim
+Nim
 nodeConfig
 NodeConfig
 nodeInfoId
@@ -153,6 +157,7 @@ onMessageSendError
 onMessageSent
 openChannel
 OpenAPI
+parityRate
 PartiallyConnected
 PascalCase
 Pax
@@ -163,12 +168,9 @@ pluggable
 Prathi
 pre
 Prem
-ProtocolsConfig
-Nim
-nim
-parityRate
 proto
 protobuf
+ProtocolsConfig
 pubsub
 rateLimitConfig
 Req
@@ -198,6 +200,7 @@ rfc
 RFC
 rln
 RLN
+RLN
 RlnConfig
 Royer
 rpc
@@ -223,6 +226,7 @@ sharding
 RLN
 SegmentMessageProto
 segmentSize
+sharding
 SHARDING
 sqlite
 subnets
@@ -245,9 +249,10 @@ UX
 waku
 uint
 waku
+waku
 Waku
-Waku's
 WAKU
+Waku's
 WakuNode
 www
 xB
