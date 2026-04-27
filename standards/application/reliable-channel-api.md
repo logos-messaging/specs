@@ -97,7 +97,7 @@ A custom Interface Definition Language (IDL) in YAML is used, consistent with [M
 
 ## The Reliable Channel API
 
-This API considers the types defined by [MESSAGING-API](/standards/application/messaging-api.md) plus the following (including `SdsConfig` and `RateLimitConfig`).
+This API considers the types defined by [MESSAGING-API](/standards/application/messaging-api.md) plus the following.
 
 ### Channel lifecycle
 
