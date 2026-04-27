@@ -111,6 +111,8 @@ When a chunk is received from the network, the implementation MUST process it in
 
 1. **Decrypt**: If an `Encryption` implementation is provided, decrypt the chunk.
 2. **Apply [SDS](https://lip.logos.co/ift-ts/raw/sds.html)**: Deliver the chunk to the SDS layer, which emits acknowledgements and detects gaps.
+   - **2.1. Detect missing dependencies**: If SDS detects a gap in the causal history (i.e., a referenced predecessor chunk has not yet been received), the implementation MUST attempt to retrieve the missing chunk.
+   - **2.2. Fetch from store**: The implementation MUST provide a mechanism to extract a retrieval hint from the received chunk (e.g., a store cursor or message hash embedded in the SDS causal history). The missing chunk MUST then be fetched from a store node via the [MESSAGING-API](/standards/application/messaging-api.md) store query, and re-injected into the incoming processing pipeline from step 1.
 3. **Reassemble**: Once all chunks for a message have been received, reassemble and emit a `reliable:message:received` event.
 
 ### Rate limiting
