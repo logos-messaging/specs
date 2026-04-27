@@ -167,8 +167,7 @@ Incoming events are emitted on `channel.messageEvents` as defined by `MessageEve
 
 This spec extends `NodeConfig`, needed to create a node, which is 
 defined in [MESSAGING-API](/standards/application/messaging-api.md), 
-with `sds_config` and `rate_limit_config` fields, whose types are defined 
-in [Type definitions](#type-definitions).
+with `sds_config` and `rate_limit_config` fields.
 
 ```yaml
 NodeConfig:  # Extends NodeConfig defined in MESSAGING-API
