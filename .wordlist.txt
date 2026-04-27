@@ -106,6 +106,7 @@ LIGHTPUSH
 maxRetransmissions
 md
 MessageChunk
+MessageDeliveredEvent
 messageEnvelope
 MessageEnvelope
 MessageErrorEvent
@@ -128,6 +129,10 @@ nodeInfoId
 num
 Oleksandr
 onEvent
+onMessageDelivered
+onMessageReceived
+onMessageSendError
+onMessageSent
 openChannel
 OpenAPI
 PartiallyConnected
