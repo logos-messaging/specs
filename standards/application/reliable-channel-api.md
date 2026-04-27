@@ -215,17 +215,35 @@ functions:
       type: result<void, error>
 
   onMessageSent:
-    description: "Subscribes a callback to be invoked when all chunks of a sent message have been acknowledged."
+    description: "Subscribes a callback to be invoked when all chunks of a message have been transmitted to the network.
+    This confirms network-level dispatch but does not guarantee the recipient has processed the message.
+    For end-to-end confirmation, see `onMessageDelivered`."
     parameters:
       - name: channel
         type: ReliableChannel
         description: "The channel handle returned by `createReliableChannel`."
       - name: callback
         type: function
-        description: "Invoked when all chunks of a send operation are acknowledged."
+        description: "Invoked when all chunks of a send operation are acknowledged by the network."
         parameters:
           - name: event
             type: MessageSentEvent
+    returns:
+      type: result<void, error>
+
+  onMessageDelivered:
+    description: "Subscribes a callback to be invoked when the recipient has confirmed receipt of a message via SDS acknowledgements.
+    This event is emitted asynchronously, after `MessageSentEvent`, once the SDS layer receives end-to-end acknowledgements from the recipient."
+    parameters:
+      - name: channel
+        type: ReliableChannel
+        description: "The channel handle returned by `createReliableChannel`."
+      - name: callback
+        type: function
+        description: "Invoked when the recipient confirms end-to-end delivery."
+        parameters:
+          - name: event
+            type: MessageDeliveredEvent
     returns:
       type: result<void, error>
 
@@ -282,6 +300,8 @@ types:
         type: MessageReceivedEvent
       "reliable:message:sent":
         type: MessageSentEvent
+      "reliable:message:delivered":
+        type: MessageDeliveredEvent
       "reliable:message:send-error":
         type: MessageSendErrorEvent
 
@@ -295,11 +315,22 @@ types:
 
   MessageSentEvent:
     type: object
-    description: "Event emitted when all chunks of a message have been acknowledged by the network."
+    description: "Event emitted when all chunks of a message have been transmitted to the network.
+    This confirms network-level dispatch only; it does not guarantee the recipient has processed the message.
+    For end-to-end confirmation, listen for `MessageDeliveredEvent`."
     fields:
       requestId:
         type: ReliableSendId
-        description: "The identifier of the `send` operation whose chunks have all been acknowledged."
+        description: "The identifier of the `send` operation whose chunks have all been dispatched to the network."
+
+  MessageDeliveredEvent:
+    type: object
+    description: "Event emitted when the recipient has confirmed end-to-end receipt of a message via SDS acknowledgements.
+    This event is fired asynchronously after `MessageSentEvent`, once the SDS layer receives explicit acknowledgements from the recipient."
+    fields:
+      requestId:
+        type: ReliableSendId
+        description: "The identifier of the `send` operation confirmed as delivered by the recipient."
 
   MessageSendErrorEvent:
     type: object
