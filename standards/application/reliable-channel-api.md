@@ -159,9 +159,52 @@ functions:
     returns:
       type: result<ReliableSendId, error>
       description: "Returns a `ReliableSendId` that callers can use to correlate subsequent `MessageSentEvent` or `MessageSendErrorEvent` events."
-```
 
-Incoming events are emitted on `channel.messageEvents` as defined by `MessageEvents`.
+  onMessageReceived:
+    description: "Subscribes a callback to be invoked when a complete message has been received and reassembled."
+    parameters:
+      - name: channel
+        type: ReliableChannel
+        description: "The channel handle returned by `createReliableChannel`."
+      - name: callback
+        type: function
+        description: "Invoked on each received message."
+        parameters:
+          - name: event
+            type: MessageReceivedEvent
+    returns:
+      type: result<void, error>
+
+  onMessageSent:
+    description: "Subscribes a callback to be invoked when all chunks of a sent message have been acknowledged."
+    parameters:
+      - name: channel
+        type: ReliableChannel
+        description: "The channel handle returned by `createReliableChannel`."
+      - name: callback
+        type: function
+        description: "Invoked when all chunks of a send operation are acknowledged."
+        parameters:
+          - name: event
+            type: MessageSentEvent
+    returns:
+      type: result<void, error>
+
+  onMessageSendError:
+    description: "Subscribes a callback to be invoked when a send operation fails after exhausting retransmission attempts."
+    parameters:
+      - name: channel
+        type: ReliableChannel
+        description: "The channel handle returned by `createReliableChannel`."
+      - name: callback
+        type: function
+        description: "Invoked when a send operation fails."
+        parameters:
+          - name: event
+            type: MessageSendErrorEvent
+    returns:
+      type: result<void, error>
+```
 
 ### Node configuration
 
@@ -190,10 +233,6 @@ types:
     description: "A handle representing an open reliable channel.
     Returned by `createReliableChannel` and used to send messages and receive events.
     Internal state (SDS, segmentation, encryption) is managed by the implementation."
-    fields:
-      messageEvents:
-        type: MessageEvents
-        description: "Event emitter for reliable message events scoped to this channel."
 
 
   MessageEvents:
