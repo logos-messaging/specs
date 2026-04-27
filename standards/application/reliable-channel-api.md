@@ -17,6 +17,11 @@ editor: Logos Messaging Team
   * [API design](#api-design)
     * [Architectural position](#architectural-position)
     * [IDL](#idl)
+  * [The Reliable Channel API](#the-reliable-channel-api)
+    * [Channel lifecycle](#channel-lifecycle)
+    * [Channel usage](#channel-usage)
+    * [Node configuration](#node-configuration)
+    * [Type definitions](#type-definitions)
   * [Components](#components)
     * [Segmentation](#segmentation)
     * [Scalable Data Sync (SDS)](#scalable-data-sync-sds)
@@ -29,10 +34,6 @@ editor: Logos Messaging Team
     * [Retransmission](#retransmission)
     * [Rate limiting](#rate-limiting)
     * [Encryption](#encryption)
-  * [The Reliable Channel API](#the-reliable-channel-api)
-    * [Type definitions](#type-definitions)
-    * [Channel lifecycle](#channel-lifecycle)
-    * [Channel usage](#channel-usage)
   * [Security/Privacy Considerations](#securityprivacy-considerations)
   * [Copyright](#copyright)
 <!-- TOC -->
@@ -93,6 +94,224 @@ The Reliable Channel API sits between the application layer and the Messaging AP
 ### IDL
 
 A custom Interface Definition Language (IDL) in YAML is used, consistent with [MESSAGING-API](/standards/application/messaging-api.md).
+
+## The Reliable Channel API
+
+This API considers the types defined by [MESSAGING-API](/standards/application/messaging-api.md) plus the following (including `SdsConfig` and `RateLimitConfig`).
+
+### Channel lifecycle
+
+This point assumes that a WakuNode instance is created beforehand. See `createNode` function
+in [MESSAGING-API](/standards/application/messaging-api.md).
+
+```yaml
+functions:
+
+  createReliableChannel:
+    description: "Opens a reliable channel over the given content topic. Sets up the required SDS state,
+    segmentation, and encryption, and subscribes to `contentTopic` via the underlying
+    [MESSAGING-API](/standards/application/messaging-api.md)."
+    parameters:
+      - name: node
+        type: WakuNode
+        description: "The underlying messaging node, as defined in [MESSAGING-API](/standards/application/messaging-api.md).
+        Used to send chunks and to subscribe/unsubscribe to the content topics."
+      - name: channelId
+        type: string
+        description: "Unique identifier for this channel. Represents the reliable (SDS), segmented, and optionally-encrypted session."
+      - name: contentTopic
+        type: string
+        description: "The topic this channel listens and sends on. This has routing and filtering connotations."
+      - name: senderId
+        type: string
+        description: "An identifier for this sender. SHOULD be unique and persisted between sessions."
+      - name: encryption
+        type: optional<Encryption>
+        default: none
+        description: "Optional pluggable encryption implementation. If none, messages are sent unencrypted."
+    returns:
+      type: result<ReliableChannel, error>
+
+  closeChannel:
+    description: "Closes a reliable channel, releases all associated resources and internal state,
+    and unsubscribes from its content topic via the underlying [MESSAGING-API](/standards/application/messaging-api.md)."
+    parameters:
+      - name: channel
+        type: ReliableChannel
+        description: "The channel handle returned by `createReliableChannel`."
+    returns:
+      type: result<void, error>
+```
+
+### Channel usage
+
+```yaml
+functions:
+  send:
+    description: "Send a message through a reliable channel. The message is always segmented,
+    SDS-tracked, rate-limited, and encrypted (if configured)."
+    parameters:
+      - name: channel
+        type: ReliableChannel
+        description: "The channel handle returned by `createReliableChannel`."
+      - name: message
+        type: array<byte>
+        description: "The raw message payload to send."
+    returns:
+      type: result<ReliableSendId, error>
+      description: "Returns a `ReliableSendId` that callers can use to correlate subsequent `MessageSentEvent` or `MessageSendErrorEvent` events."
+```
+
+Incoming events are emitted on `channel.messageEvents` as defined by `MessageEvents`.
+
+### Node configuration
+
+This spec extends `NodeConfig`, needed to create a node, which is 
+defined in [MESSAGING-API](/standards/application/messaging-api.md), 
+with `sds_config` and `rate_limit_config` fields, whose types are defined 
+in [Type definitions](#type-definitions).
+
+```yaml
+NodeConfig:  # Extends NodeConfig defined in MESSAGING-API
+  fields:
+    sds_config:
+      type: SdsConfig
+      description: "SDS configuration. See SdsConfig defined in this spec."
+    rate_limit_config:
+      type: RateLimitConfig
+      description: "Rate limiting configuration, including RLN-specific attributes. See RateLimitConfig defined in this spec."
+```
+
+### Type definitions
+
+```yaml
+types:
+
+  ReliableChannel:
+    type: object
+    description: "A handle representing an open reliable channel.
+    Returned by `createReliableChannel` and used to send messages and receive events.
+    Internal state (SDS, segmentation, encryption) is managed by the implementation."
+    fields:
+      messageEvents:
+        type: MessageEvents
+        description: "Event emitter for reliable message events scoped to this channel."
+
+      rateLimitConfig:
+        type: RateLimitConfig
+        default: DefaultRateLimitConfig
+        description: "Configuration for rate limit management."
+
+  MessageEvents:
+    type: event_emitter
+    description: "Event source for reliable message events on a channel"
+    events:
+      "reliable:message:received":
+        type: MessageReceivedEvent
+      "reliable:message:sent":
+        type: MessageSentEvent
+      "reliable:message:send-error":
+        type: MessageSendErrorEvent
+
+  MessageReceivedEvent:
+    type: object
+    description: "Event emitted when a complete message has been received and reassembled."
+    fields:
+      message:
+        type: array<byte>
+        description: "The reassembled message payload."
+
+  MessageSentEvent:
+    type: object
+    description: "Event emitted when all chunks of a message have been acknowledged by the network."
+    fields:
+      requestId:
+        type: ReliableSendId
+        description: "The identifier of the `send` operation whose chunks have all been acknowledged."
+
+  MessageSendErrorEvent:
+    type: object
+    description: "Event emitted when a message send operation fails after exhausting retransmission attempts."
+    fields:
+      requestId:
+        type: ReliableSendId
+        description: "The identifier of the `send` operation that failed after exhausting retransmission attempts."
+      error:
+        type: string
+        description: "Error message describing what went wrong"
+
+  ReliableSendId:
+    type: string
+    description: "Unique identifier for a single `send` operation on a reliable channel.
+    It groups all chunks produced by segmenting one message, so callers can correlate
+    acknowledgement and error events back to the original send call.
+    Internally, each chunk is dispatched as an independent [MESSAGING-API](/standards/application/messaging-api.md) call,
+    producing one `RequestId` (as defined in [MESSAGING-API](/standards/application/messaging-api.md)) per chunk.
+    A single `ReliableSendId` therefore maps to one or more underlying `RequestId` values,
+    one per chunk sent."
+
+  SdsConfig:
+    type: object
+    description: Scalable Data Sync config items.
+    fields:
+      persistence:
+        type: Persistence
+        description: "Backend for persisting the SDS local history. Implementations MAY support custom backends."
+      acknowledgementTimeoutMs:
+        type: uint
+        default: 5000
+        description: "Time in milliseconds to wait for acknowledgement before retransmitting."
+      maxRetransmissions:
+        type: uint
+        default: 5
+        description: "Maximum number of retransmission attempts before considering delivery failed."
+      causalHistorySize:
+        type: uint
+        default: 2
+        description: "Number of message IDs to consider in the causal history. With longer value, a stronger correctness is guaranteed but it requires higher bandwidth and memory."
+
+  RateLimitConfig:
+    type: object
+    description: Rate limiting configuration, containing RLN-specific attributes.
+    fields:
+      enabled:
+        type: bool
+        default: false
+        description: "Whether rate limiting is enforced. SHOULD be true when RLN is active."
+      epochSizeMs:
+        type: uint
+        default: 600000  # 10 minutes
+        description: "The epoch size used by the RLN relay, in milliseconds."
+
+  Encryption:
+    type: object
+    description: "Interface for a pluggable encryption mechanism.
+    When provided as a parameter to `createReliableChannel`, the API consumer MUST implement both encrypt and decrypt operations.
+    Implementations MAY use different signatures than those described below, as long as each operation accepts a byte array and returns a byte array."
+    fields:
+      encrypt:
+        type: function
+        description: "Encrypts a byte payload. Returns the encrypted payload."
+        parameters:
+          - name: content
+            type: array<byte>
+        returns:
+          type: result<array<byte>, error>
+      decrypt:
+        type: function
+        description: "Decrypts a byte payload. Returns the decrypted payload."
+        parameters:
+          - name: payload
+            type: array<byte>
+        returns:
+          type: result<array<byte>, error>
+
+  Persistence:
+    type: object
+    description: "Interface for a pluggable SDS persistence backend.
+    Implementations MUST provide all functions required to save and retrieve SDS state per channel. Implementations MUST also provide the persistence method of interest, e.g., SQLite, custom encrypted storage, etc.
+    Refer to the [SDS spec](https://lip.logos.co/ift-ts/raw/sds.html) for the full definition of what state must be persisted."
+```
 
 ## Components
 
@@ -176,212 +395,6 @@ The `encryption` parameter in `createReliableChannel` is intentionally optional.
 The Reliable Channel API is agnostic to encryption mechanisms.
 
 When an `Encryption` implementation is provided, it MUST be applied as described in [Outgoing message processing](#outgoing-message-processing) and [Incoming message processing](#incoming-message-processing).
-
-## The Reliable Channel API
-
-This API considers the types defined by [MESSAGING-API](/standards/application/messaging-api.md) plus the following (including `SdsConfig` and `RateLimitConfig`).
-It also extends `NodeConfig`, defined in [MESSAGING-API](/standards/application/messaging-api.md), with `sds_config` and `rate_limit_config` fields, whose types are defined here.
-
-### Type definitions
-
-```yaml
-types:
-  ReliableSendId:
-    type: string
-    description: "Unique identifier for a single `send` operation on a reliable channel.
-    It groups all chunks produced by segmenting one message, so callers can correlate
-    acknowledgement and error events back to the original send call.
-    Internally, each chunk is dispatched as an independent [MESSAGING-API](/standards/application/messaging-api.md) call,
-    producing one `RequestId` (as defined in [MESSAGING-API](/standards/application/messaging-api.md)) per chunk.
-    A single `ReliableSendId` therefore maps to one or more underlying `RequestId` values,
-    one per chunk sent."
-
-  Encryption:
-    type: object
-    description: "Interface for a pluggable encryption mechanism.
-    When provided as a parameter to `createReliableChannel`, the API consumer MUST implement both encrypt and decrypt operations.
-    Implementations MAY use different signatures than those described below, as long as each operation accepts a byte array and returns a byte array."
-    fields:
-      encrypt:
-        type: function
-        description: "Encrypts a byte payload. Returns the encrypted payload."
-        parameters:
-          - name: content
-            type: array<byte>
-        returns:
-          type: result<array<byte>, error>
-      decrypt:
-        type: function
-        description: "Decrypts a byte payload. Returns the decrypted payload."
-        parameters:
-          - name: payload
-            type: array<byte>
-        returns:
-          type: result<array<byte>, error>
-
-  Persistence:
-    type: object
-    description: "Interface for a pluggable SDS persistence backend.
-    Implementations MUST provide all functions required to save and retrieve SDS state per channel. Implementations MUST also provide the persistence method of interest, e.g., SQLite, custom encrypted storage, etc.
-    Refer to the [SDS spec](https://lip.logos.co/ift-ts/raw/sds.html) for the full definition of what state must be persisted."
-
-  ReliableChannel:
-    type: object
-    description: "A handle representing an open reliable channel.
-    Returned by `createReliableChannel` and used to send messages and receive events.
-    Internal state (SDS, segmentation, encryption) is managed by the implementation."
-    fields:
-      messageEvents:
-        type: MessageEvents
-        description: "Event emitter for reliable message events scoped to this channel."
-
-      rateLimitConfig:
-        type: RateLimitConfig
-        default: DefaultRateLimitConfig
-        description: "Configuration for rate limit management."
-
-  NodeConfig:  # Extends NodeConfig defined in MESSAGING-API
-    fields:
-      sds_config:
-        type: SdsConfig
-        description: "SDS configuration. See SdsConfig defined in this spec."
-      rate_limit_config:
-        type: RateLimitConfig
-        description: "Rate limiting configuration, including RLN-specific attributes. See RateLimitConfig defined in this spec."
-
-  SdsConfig:
-    type: object
-    description: Scalable Data Sync config items.
-    fields:
-      persistence:
-        type: Persistence
-        description: "Backend for persisting the SDS local history. Implementations MAY support custom backends."
-      acknowledgementTimeoutMs:
-        type: uint
-        default: 5000
-        description: "Time in milliseconds to wait for acknowledgement before retransmitting."
-      maxRetransmissions:
-        type: uint
-        default: 5
-        description: "Maximum number of retransmission attempts before considering delivery failed."
-      causalHistorySize:
-        type: uint
-        default: 2
-        description: "Number of message IDs to consider in the causal history. With longer value, a stronger correctness is guaranteed but it requires higher bandwidth and memory."
-
-  RateLimitConfig:
-    type: object
-    description: Rate limiting configuration, containing RLN-specific attributes.
-    fields:
-      enabled:
-        type: bool
-        default: false
-        description: "Whether rate limiting is enforced. SHOULD be true when RLN is active."
-      epochSizeMs:
-        type: uint
-        default: 600000  # 10 minutes
-        description: "The epoch size used by the RLN relay, in milliseconds."
-
-  MessageReceivedEvent:
-    type: object
-    description: "Event emitted when a complete message has been received and reassembled."
-    fields:
-      message:
-        type: array<byte>
-        description: "The reassembled message payload."
-
-  MessageSentEvent:
-    type: object
-    description: "Event emitted when all chunks of a message have been acknowledged by the network."
-    fields:
-      requestId:
-        type: ReliableSendId
-        description: "The identifier of the `send` operation whose chunks have all been acknowledged."
-
-  MessageSendErrorEvent:
-    type: object
-    description: "Event emitted when a message send operation fails after exhausting retransmission attempts."
-    fields:
-      requestId:
-        type: ReliableSendId
-        description: "The identifier of the `send` operation that failed after exhausting retransmission attempts."
-      error:
-        type: string
-        description: "Error message describing what went wrong"
-
-  MessageEvents:
-    type: event_emitter
-    description: "Event source for reliable message events on a channel"
-    events:
-      "reliable:message:received":
-        type: MessageReceivedEvent
-      "reliable:message:sent":
-        type: MessageSentEvent
-      "reliable:message:send-error":
-        type: MessageSendErrorEvent
-```
-
-### Channel lifecycle
-
-```yaml
-functions:
-
-  createReliableChannel:
-    description: "Opens a reliable channel over the given content topic. Sets up the required SDS state,
-    segmentation, and encryption, and subscribes to `contentTopic` via the underlying
-    [MESSAGING-API](/standards/application/messaging-api.md)."
-    parameters:
-      - name: node
-        type: WakuNode
-        description: "The underlying messaging node, as defined in [MESSAGING-API](/standards/application/messaging-api.md).
-        Used to send chunks and to subscribe/unsubscribe to the content topics."
-      - name: channelId
-        type: string
-        description: "Unique identifier for this channel. Represents the reliable (SDS), segmented, and optionally-encrypted session."
-      - name: contentTopic
-        type: string
-        description: "The topic this channel listens and sends on. This has routing and filtering connotations."
-      - name: senderId
-        type: string
-        description: "An identifier for this sender. SHOULD be unique and persisted between sessions."
-      - name: encryption
-        type: optional<Encryption>
-        default: none
-        description: "Optional pluggable encryption implementation. If none, messages are sent unencrypted."
-    returns:
-      type: result<ReliableChannel, error>
-
-  closeChannel:
-    description: "Closes a reliable channel, releases all associated resources and internal state,
-    and unsubscribes from its content topic via the underlying [MESSAGING-API](/standards/application/messaging-api.md)."
-    parameters:
-      - name: channel
-        type: ReliableChannel
-        description: "The channel handle returned by `createReliableChannel`."
-    returns:
-      type: result<void, error>
-```
-
-### Channel usage
-
-```yaml
-functions:
-  send:
-    description: "Send a message through a reliable channel. The message is always segmented,
-    SDS-tracked, rate-limited, and encrypted (if configured)."
-    parameters:
-      - name: channel
-        type: ReliableChannel
-        description: "The channel handle returned by `createReliableChannel`."
-      - name: message
-        type: array<byte>
-        description: "The raw message payload to send."
-    returns:
-      type: result<ReliableSendId, error>
-      description: "Returns a `ReliableSendId` that callers can use to correlate subsequent `MessageSentEvent` or `MessageSendErrorEvent` events."
-```
-
-Incoming events are emitted on `channel.messageEvents` as defined by `MessageEvents`.
 
 ## Security/Privacy Considerations
 
