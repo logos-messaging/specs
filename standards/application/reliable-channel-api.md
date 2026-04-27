@@ -108,9 +108,8 @@ in [MESSAGING-API](/standards/application/messaging-api.md).
 functions:
 
   createReliableChannel:
-    description: "Opens a reliable channel over the given content topic. Sets up the required SDS state,
-    segmentation, and encryption, and subscribes to `contentTopic` via the underlying
-    [MESSAGING-API](/standards/application/messaging-api.md)."
+    description: "Creates a reliable channel over the given content topic. Sets up the required SDS state,
+    segmentation, and encryption, and subscribes to `contentTopic`."
     parameters:
       - name: node
         type: WakuNode
