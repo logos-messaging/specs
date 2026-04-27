@@ -125,7 +125,7 @@ The Encryption Hook provides a pluggable interface for upper layers to inject en
 - The hook is optional; when not provided, messages are sent unencrypted.
 - Encryption is applied per chunk, after segmentation and SDS registration.
 - Decryption is applied per chunk, before SDS delivery.
-- The `IEncryption` interface MUST be implemented by the caller.
+- The `Encryption` interface MUST be implemented by the caller.
 - The Reliable Channel API MUST NOT impose any specific encryption scheme.
 
 ## Procedures
@@ -145,7 +145,7 @@ When `send` is called, the implementation MUST process `message` in the followin
 
 1. **Segment**: Split the payload into chunks as defined in [SEGMENTATION-API](./segmentation-api.md).
 2. **Apply [SDS](https://lip.logos.co/ift-ts/raw/sds.html)**: Register each chunk with the SDS layer to track acknowledgements and enable retransmission.
-3. **Encrypt**: If an `IEncryption` implementation is provided, encrypt each chunk before transmission.
+3. **Encrypt**: If an `Encryption` implementation is provided, encrypt each chunk before transmission.
 4. **Rate Limit**: If `RateLimitConfig.enabled` is `true`, delay dispatch as needed to comply with [RLN](https://lip.logos.co/messaging/standards/core/17/rln-relay.html) epoch constraints.
 5. **Dispatch**: Send each chunk via the underlying [MESSAGING-API](/standards/application/messaging-api.md).
 
@@ -153,7 +153,7 @@ When `send` is called, the implementation MUST process `message` in the followin
 
 When a chunk is received from the network, the implementation MUST process it in the following order:
 
-1. **Decrypt**: If an `IEncryption` implementation is provided, decrypt the chunk.
+1. **Decrypt**: If an `Encryption` implementation is provided, decrypt the chunk.
 2. **Apply [SDS](https://lip.logos.co/ift-ts/raw/sds.html)**: Deliver the chunk to the SDS layer, which emits acknowledgements and detects gaps.
 3. **Reassemble**: Once all chunks for a message have been received, reassemble and emit a `reliable:message:received` event.
 
@@ -175,7 +175,7 @@ Chunks MUST NOT be sent at a rate that would violate the RLN message rate limit 
 The `encryption` parameter in `createReliableChannel` is intentionally optional.
 The Reliable Channel API is agnostic to encryption mechanisms.
 
-When an `IEncryption` implementation is provided, it MUST be applied as described in [Outgoing message processing](#outgoing-message-processing) and [Incoming message processing](#incoming-message-processing).
+When an `Encryption` implementation is provided, it MUST be applied as described in [Outgoing message processing](#outgoing-message-processing) and [Incoming message processing](#incoming-message-processing).
 
 ## The Reliable Channel API
 
@@ -196,7 +196,7 @@ types:
     A single `ReliableSendId` therefore maps to one or more underlying `RequestId` values,
     one per chunk sent."
 
-  IEncryption:
+  Encryption:
     type: object
     description: "Interface for a pluggable encryption mechanism.
     When provided as a parameter to `createReliableChannel`, the API consumer MUST implement both encrypt and decrypt operations.
@@ -219,7 +219,7 @@ types:
         returns:
           type: result<array<byte>, error>
 
-  IPersistence:
+  Persistence:
     type: object
     description: "Interface for a pluggable SDS persistence backend.
     Implementations MUST provide all functions required to save and retrieve SDS state per channel. Implementations MUST also provide the persistence method of interest, e.g., SQLite, custom encrypted storage, etc.
@@ -254,7 +254,7 @@ types:
     description: Scalable Data Sync config items.
     fields:
       persistence:
-        type: IPersistence
+        type: Persistence
         description: "Backend for persisting the SDS local history. Implementations MAY support custom backends."
       acknowledgementTimeoutMs:
         type: uint
@@ -345,7 +345,7 @@ functions:
         type: string
         description: "An identifier for this sender. SHOULD be unique and persisted between sessions."
       - name: encryption
-        type: optional<IEncryption>
+        type: optional<Encryption>
         default: none
         description: "Optional pluggable encryption implementation. If none, messages are sent unencrypted."
     returns:
@@ -385,7 +385,7 @@ Incoming events are emitted on `channel.messageEvents` as defined by `MessageEve
 
 ## Security/Privacy Considerations
 
-- This API does not provide confidentiality by default. An `IEncryption` implementation MUST be supplied when confidentiality is required.
+- This API does not provide confidentiality by default. An `Encryption` implementation MUST be supplied when confidentiality is required.
 - Chunk metadata (message ID, chunk index, total chunks) is visible to network observers unless encrypted by the hook.
 - SDS acknowledgement messages are sent over the same content topic and are subject to the same confidentiality concerns.
 - Rate limiting compliance is required to avoid exclusion from the network by RLN-enforcing relays.
