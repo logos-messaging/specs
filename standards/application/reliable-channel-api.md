@@ -18,7 +18,6 @@ editor: Logos Messaging Team
     * [Architectural position](#architectural-position)
     * [IDL](#idl)
   * [Procedures](#procedures)
-    * [State management](#state-management)
     * [Outgoing message processing](#outgoing-message-processing)
     * [Incoming message processing](#incoming-message-processing)
     * [Retransmission](#retransmission)
@@ -96,15 +95,6 @@ The Reliable Channel API sits between the application layer and the Messaging AP
 A custom Interface Definition Language (IDL) in YAML is used, consistent with [MESSAGING-API](/standards/application/messaging-api.md).
 
 ## Procedures
-
-### State management
-
-Each `ReliableChannel` MUST maintain internal state for [SDS](https://lip.logos.co/ift-ts/raw/sds.html), keyed by `channelId`. This state MAY be persisted within the SDS implementation layer and includes:
-- A committed message log recording sent messages and their acknowledgement status.
-- An outgoing buffer of unacknowledged message chunks pending confirmation.
-- An incoming buffer for partially received segmented messages awaiting full reassembly.
-
-The state MUST be persisted using the `persistence` backend specified in `SdsConfig`.
 
 ### Outgoing message processing
 
