@@ -53,7 +53,7 @@ The [MESSAGING-API](/standards/application/messaging-api.md) provides peer-to-pe
 but does not provide high end-to-end delivery guarantees from sender to recipient.
 
 This API addresses that gap by introducing:
-- **[SEGMENTATION-API](/standards/application/segmentation-api.md)** to handle large messages exceeding network size limits.
+- **[SEGMENTATION-API](/standards/application/segmentation.md)** to handle large messages exceeding network size limits.
 - **[SDS](https://lip.logos.co/ift-ts/raw/sds.html)** to provide causal-history-based end-to-end acknowledgement and retransmission.
 - **Rate Limit Manager** to comply with [RLN](https://lip.logos.co/messaging/standards/core/17/rln-relay.html) constraints when sending segmented messages.
 - **Encryption Hook** to allow upper layers to provide a pluggable encryption mechanism. The main motivation for encryption is to protect the payload. 
