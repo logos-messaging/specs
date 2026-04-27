@@ -99,7 +99,7 @@ A custom Interface Definition Language (IDL) in YAML is used, consistent with [M
 
 When `send` is called, the implementation MUST process `message` in the following order:
 
-1. **Segment**: Split the payload into chunks as defined in [SEGMENTATION-API](./segmentation-api.md).
+1. **Segment**: Split the payload into chunks as defined in [SEGMENTATION-API](./segmentation-api.md). The maximum chunk size MUST be reduced by the size of the SDS header added in step 2, so that each chunk together with its SDS header stays within the network message size limit.
 2. **Apply [SDS](https://lip.logos.co/ift-ts/raw/sds.html)**: Register each chunk with the SDS layer to track acknowledgements and enable retransmission.
 3. **Encrypt**: If an `Encryption` implementation is provided, encrypt each chunk before transmission.
 4. **Rate Limit**: If `RateLimitConfig.enabled` is `true`, delay dispatch as needed to comply with [RLN](https://lip.logos.co/messaging/standards/core/17/rln-relay.html) epoch constraints.
