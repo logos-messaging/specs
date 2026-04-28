@@ -190,8 +190,8 @@ functions:
         type: array<byte>
         description: "The raw message payload to send."
     returns:
-      type: result<ReliableSendId, error>
-      description: "Returns a `ReliableSendId` that callers can use to correlate subsequent `MessageSentEvent` or `MessageSendErrorEvent` events."
+      type: result<RequestId, error>
+      description: "Returns a `RequestId` that callers can use to correlate subsequent `MessageSentEvent` or `MessageSendErrorEvent` events."
 
   onMessageReceived:
     description: "Subscribes a callback to be invoked when a complete message has been received and reassembled."
@@ -313,7 +313,7 @@ types:
     For end-to-end confirmation, listen for `MessageDeliveredEvent`."
     fields:
       requestId:
-        type: ReliableSendId
+        type: RequestId
         description: "The identifier of the `send` operation whose segments have all been dispatched to the network."
 
   MessageDeliveredEvent:
@@ -322,7 +322,7 @@ types:
     This event is fired asynchronously after `MessageSentEvent`, once the SDS layer receives explicit acknowledgements from the recipient."
     fields:
       requestId:
-        type: ReliableSendId
+        type: RequestId
         description: "The identifier of the `send` operation confirmed as delivered by the recipient."
 
   MessageSendErrorEvent:
@@ -330,7 +330,7 @@ types:
     description: "Event emitted when a message send operation fails after exhausting retransmission attempts."
     fields:
       requestId:
-        type: ReliableSendId
+        type: RequestId
         description: "The identifier of the `send` operation that failed after exhausting retransmission attempts."
       error:
         type: string
@@ -339,15 +339,21 @@ types:
           - `dispatch_failed`: the network layer rejected or could not dispatch the segment (e.g. lightpush returned `is_success: false`, or no relay/lightpush peers were reachable); propagated from the underlying [MESSAGING-API](/standards/application/messaging-api.md) `MessageSendErrorEvent` error field.
           - `channel_closed`: the channel was closed before the recipient confirmed delivery, leaving one or more segments unacknowledged."
 
-  ReliableSendId:
+  RequestId:
     type: string
     description: "Unique identifier for a single `send` operation on a reliable channel.
     It groups all segments produced by segmenting one message, so callers can correlate
     acknowledgement and error events back to the original send call.
     Internally, each segment is dispatched as an independent [MESSAGING-API](/standards/application/messaging-api.md) call,
     producing one `RequestId` (as defined in [MESSAGING-API](/standards/application/messaging-api.md)) per segment.
-    A single `ReliableSendId` therefore maps to one or more underlying `RequestId` values,
-    one per segment sent."
+    A single `RequestId` therefore maps to one or more underlying [MESSAGING-API](/standards/application/messaging-api.md)'s `RequestId` values,
+    one per segment sent.
+    For example, the `RequestId` `Req_a` yields these MESSAGING-API requests:
+    `Req_a:1`, `Req_a:2`, ..., `Req_a:N`, where `Req_a:k` represents the k-th
+    MESSAGING-API segment `RequestId`.
+    That is, `Req_a` is the `RequestId` from the RELIABLE-CHANNEL-API spec PoV,
+    whereas `Req_a:k` is the `RequestId` from the MESSAGING-API spec PoV.
+    "
 
   SegmentationConfig:
     type: object
