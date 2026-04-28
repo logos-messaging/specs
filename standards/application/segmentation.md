@@ -8,8 +8,8 @@ status: draft
 
 ## Abstract
 
-This specification defines an application-layer protocol for **segmentation** and **reconstruction** of messages carried over a message transport/delivery services with size limitation, when the original payload exceeds said limitation.
-Applications partition the payload into multiple wire-messages envelopes and reconstruct the original on receipt,
+This specification defines an application-layer protocol for **segmentation** and **reconstruction** of messages carried over a transport/delivery service with a message-size limitation, when the original payload exceeds said limitation.
+Applications partition the payload into multiple transport messages and reconstruct the original on receipt,
 even when segments arrive out of order or up to a **predefined percentage** of segments are lost.
 The protocol uses **Reed–Solomon** erasure coding for fault tolerance.
 All messages are wrapped in a `SegmentMessageProto`, including those that fit in a single segment.
@@ -17,7 +17,8 @@ Implementations **MAY** opt into a [backwards-compatible mode](#backwards-compat
 
 ## Motivation
 
-Waku Relay deployments typically propagate envelopes up to **150 KB** as per [64/WAKU2-NETWORK - Message](https://rfc.vac.dev/waku/standards/core/64/network#message-size).
+Many message transport and delivery protocols impose a maximum message size that restricts the size of application payloads.
+For example, Waku Relay typically propagates messages up to **150 KB** as per [64/WAKU2-NETWORK - Message](https://rfc.vac.dev/waku/standards/core/64/network#message-size).
 To support larger application payloads, a segmentation layer is required.
 This specification enables larger messages by partitioning them into multiple envelopes and reconstructing them at the receiver.
 Erasure-coded parity segments provide resilience against partial loss or reordering.
@@ -95,7 +96,7 @@ To transmit a payload, the sender:
   - The `entire_message_hash`
   - Either data-segment indices (`segments_count`, `index`) or parity-segment indices (`parity_segments_count`, `parity_segment_index`)
   - The raw payload data
-- Send all segments as individual Waku envelopes,
+- Send each segment as an individual transport message according to the underlying transport protocol,
   preserving application-level metadata (e.g., content topic).
 
 This yields a deterministic wire format: every transmitted payload is a `SegmentMessageProto`. Implementations introducing segmentation into a deployment with peers that predate this specification **MAY** instead operate in [backwards-compatible mode](#backwards-compatibility).
@@ -177,7 +178,7 @@ Libraries **SHOULD** require only `segmentSize` from the application for normal 
 
 - **Language / Package:** Nim;
   **Nimble** package manager
-- **Intended for:** all Waku nodes at the application layer
+- **Intended for:** application-layer use over any transport with message-size constraints
 
 ---
 
@@ -199,7 +200,7 @@ To mitigate resource exhaustion:
 - Limit concurrent reconstructions and per-sender storage
 - Enforce timeouts and size caps
 - Validate segment counts (≤ 256)
-- Consider rate-limiting using [17/WAKU2-RLN-RELAY](https://rfc.vac.dev/waku/standards/core/17/rln-relay)
+- Consider rate-limiting at the transport layer (for example, via [17/WAKU2-RLN-RELAY](https://rfc.vac.dev/waku/standards/core/17/rln-relay) on Waku)
 
 ### Compatibility
 
@@ -216,7 +217,7 @@ Nodes that do **not** implement this specification cannot reconstruct large mess
 
 **Network impact:**
 
-- Larger messages increase gossip traffic and storage;
+- Larger messages increase transport traffic and storage;
   operators **SHOULD** consider policy limits
 
 ---
