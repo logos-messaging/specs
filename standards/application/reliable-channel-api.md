@@ -51,7 +51,7 @@ The [MESSAGING-API](/standards/application/messaging-api.md) provides peer-to-pe
 but does not provide high end-to-end delivery guarantees from sender to recipient.
 
 This API addresses that gap by introducing:
-- **[SEGMENTATION-API](/standards/application/segmentation.md)** to handle large messages exceeding network size limits.
+- **[SEGMENTATION](/standards/application/segmentation.md)** to handle large messages exceeding network size limits.
 - **[SDS](https://lip.logos.co/ift-ts/raw/sds.html)** to provide causal-history-based end-to-end acknowledgement and retransmission.
 - **Rate Limit Manager** to comply with [RLN](https://lip.logos.co/messaging/standards/core/17/rln-relay.html) constraints when sending segmented messages.
 - **Encryption Hook** to allow upper layers to provide a pluggable encryption mechanism. The main motivation for encryption is to protect the payload. 
@@ -99,7 +99,7 @@ A custom Interface Definition Language (IDL) in YAML is used, consistent with [M
 
 When `send` is called, the implementation MUST process `message` in the following order:
 
-1. **Segment**: Split the payload into segments as defined in [SEGMENTATION-API](./segmentation-api.md). The maximum segment size MUST be reduced by the size of the SDS header added in step 2, so that each segment together with its SDS header stays within the network message size limit.
+1. **Segment**: Split the payload into segments as defined in [SEGMENTATION](./segmentation.md). The maximum segment size MUST be reduced by the size of the SDS header added in step 2, so that each segment together with its SDS header stays within the network message size limit.
 2. **Apply [SDS](https://lip.logos.co/ift-ts/raw/sds.html)**: Register each segment with the SDS layer to track acknowledgements and enable retransmission.
 3. **Encrypt**: If an `Encryption` implementation is provided, encrypt each segment before transmission.
 4. **Rate Limit**: If `RateLimitConfig.enabled` is `true`, delay dispatch as needed to comply with [RLN](https://lip.logos.co/messaging/standards/core/17/rln-relay.html) epoch constraints.
@@ -414,7 +414,7 @@ types:
 
 ### Segmentation
 
-See [SEGMENTATION-API](./segmentation-api.md).
+See [SEGMENTATION](./segmentation.md).
 
 ### Scalable Data Sync (SDS)
 
