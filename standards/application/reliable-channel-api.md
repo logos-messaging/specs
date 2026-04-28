@@ -334,7 +334,10 @@ types:
         description: "The identifier of the `send` operation that failed after exhausting retransmission attempts."
       error:
         type: string
-        description: "Error message describing what went wrong"
+        description: "Describes the failure that prevented end-to-end delivery. Possible values:
+          - `irrecoverable_loss`: SDS marked the message as irretrievably lost — the recipient's acknowledgement was not received after `maxRetransmissions` retransmission attempts.
+          - `dispatch_failed`: the network layer rejected or could not dispatch the segment (e.g. lightpush returned `is_success: false`, or no relay/lightpush peers were reachable); propagated from the underlying [MESSAGING-API](/standards/application/messaging-api.md) `MessageSendErrorEvent` error field.
+          - `channel_closed`: the channel was closed before the recipient confirmed delivery, leaving one or more segments unacknowledged."
 
   ReliableSendId:
     type: string
