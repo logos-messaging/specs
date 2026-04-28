@@ -17,8 +17,7 @@ Messages whose payload size is **≤ `segmentSize`** are sent unmodified.
 ## Motivation
 
 Waku Relay deployments typically propagate envelopes up to **150 KB** as per [64/WAKU2-NETWORK - Message](https://rfc.vac.dev/waku/standards/core/64/network#message-size).
-To support larger application payloads,
-a segmentation layer is required.
+To support larger application payloads, a segmentation layer is required.
 This specification enables larger messages by partitioning them into multiple envelopes and reconstructing them at the receiver.
 Erasure-coded parity segments provide resilience against partial loss or reordering.
 
@@ -29,7 +28,6 @@ Erasure-coded parity segments provide resilience against partial loss or reorder
 - **parity segment**: an erasure-coded segment derived from the set of data segments.
 - **segment message**: a wire-message whose `payload` field carries a serialized `SegmentMessageProto`.
 - **`segmentSize`**: configured maximum size in bytes of each data segment's `payload` chunk (before protobuf serialization).
-- **sender public key**: the origin identifier used for indexing persistence.
 
 The key words **"MUST"**, **"MUST NOT"**, **"REQUIRED"**, **"SHALL"**, **"SHALL NOT"**, **"SHOULD"**, **"SHOULD NOT"**, **"RECOMMENDED"**, **"NOT RECOMMENDED"**, **"MAY"**, and **"OPTIONAL"** in this document are to be interpreted as described in [RFC 2119](https://www.ietf.org/rfc/rfc2119.txt).
 
@@ -46,14 +44,14 @@ message SegmentMessageProto {
 
   // Data segment indexing
   uint32 index                  = 2; // zero-based sequence number; valid only if segments_count > 0
-  uint32 segment_count          = 3; // number of data segments (>= 2)
+  uint32 segments_count         = 3; // number of data segments
 
   // Segment payload (data or parity shard)
   bytes  payload                = 4;
 
   // Parity segment indexing (used if segments_count == 0)
   uint32 parity_segment_index   = 5; // zero-based sequence number for parity segments
-  uint32 parity_segments_count  = 6; // number of parity segments (> 0)
+  uint32 parity_segments_count  = 6; // number of parity segments
 }
 ```
 
@@ -61,12 +59,12 @@ message SegmentMessageProto {
 
 - `entire_message_hash`: A 32-byte Keccak256 hash of the original complete payload, used to identify which segments belong together and verify reconstruction integrity.
 - `index`: Zero-based sequence number identifying this data segment's position (0, 1, 2, ..., segments_count - 1).
-- `segment_count`: Total number of data segments the original message was split into.
+- `segments_count`: Total number of data segments the original message was split into.
 - `payload`: The actual chunk of data or parity information for this segment.
 - `parity_segment_index`: Zero-based sequence number for parity segments.
 - `parity_segments_count`: Total number of parity segments generated.
 
-A message is either a **data segment** (when `segment_count > 0`) or a **parity segment** (when `segment_count == 0`).
+A message is either a **data segment** (when `segments_count > 0`) or a **parity segment** (when `segments_count == 0`).
 
 ### Validation
 
@@ -127,7 +125,7 @@ The reference implementation uses **nim-leopard** (Leopard-RS) with a maximum of
 
 ### Storage / Persistence
 
-Segments **MAY** be persisted (e.g., SQLite) and indexed by `entire_message_hash` and sender public key.
+Segments **MAY** be persisted (e.g., SQLite) and indexed by `entire_message_hash` and by sender. Sender MAY be authenticated, this is out of scope of this spec.
 Implementations **SHOULD** support:
 
 - Duplicate detection and idempotent saves
@@ -137,15 +135,12 @@ Implementations **SHOULD** support:
 
 ### Configuration
 
-**Required parameters:**
-
-- `segmentSize` — **REQUIRED** configurable parameter;
-  maximum size in bytes of each data segment's payload chunk (before protobuf serialization).
-
-**Fixed parameters:**
-
-- `parityRate` — fixed at **0.125** (12.5%)
-- `maxTotalSegments` — **256**
+- `segmentSize` — maximum size in bytes of each data segment's payload chunk (before protobuf serialization).
+    **REQUIRED** parameter, configurable by the client.
+- `parityRate` — fraction of parity shards relative to data shards.
+    Configurable by the client. Defaults to **0.125** (12.5%).
+- `maxTotalSegments` — maximum number of total shards (data + parity) per message.
+    Implementation-specific parameter, fixed. The reference implementation uses **256**.
 
 **Reconstruction capability:**
 With the predefined parity rate,
@@ -153,6 +148,8 @@ reconstruction is possible if **all data segments** are received or if **any com
 
 **API simplicity:**
 Libraries **SHOULD** require only `segmentSize` from the application for normal operation.
+
+
 
 ### Support
 
