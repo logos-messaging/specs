@@ -12,7 +12,8 @@ This specification defines an application-layer protocol for **segmentation** an
 Applications partition the payload into multiple wire-messages envelopes and reconstruct the original on receipt,
 even when segments arrive out of order or up to a **predefined percentage** of segments are lost.
 The protocol uses **Reed–Solomon** erasure coding for fault tolerance.
-Messages whose payload size is **≤ `segmentSize`** are sent unmodified.
+All messages are wrapped in a `SegmentMessageProto`, including those that fit in a single segment.
+Implementations **MAY** opt into a [backwards-compatible mode](#backwards-compatibility) that exempts small payloads from wrapping.
 
 ## Motivation
 
@@ -72,21 +73,23 @@ Receivers **MUST** enforce:
 
 - `entire_message_hash.length == 32`
 - **Data segments:**
-  `segments_count >= 2` **AND** `index < segments_count`
+  `segments_count >= 1` **AND** `index < segments_count`
 - **Parity segments:**
   `segments_count == 0` **AND** `parity_segments_count > 0` **AND** `parity_segment_index < parity_segments_count`
 
 No other combinations are permitted.
+A `SegmentMessageProto` with `segments_count == 1` and `index == 0` is a valid single-segment data message: the `payload` field carries the entire original payload (see [Sending](#sending)).
 
 ## Segmentation
 
 ### Sending
 
-When the original payload exceeds `segmentSize`, the sender:
+To transmit a payload, the sender:
 
 - **MUST** compute a 32-byte `entire_message_hash = Keccak256(original_payload)`.
 - **MUST** split the payload into one or more **data segments**,
   each of size up to `segmentSize` bytes.
+  A payload of size ≤ `segmentSize` produces a single data segment (`segments_count == 1`).
 - **MAY** use Reed–Solomon erasure coding at the predefined parity rate.
 - Encode each segment as a `SegmentMessageProto` with:
   - The `entire_message_hash`
@@ -95,7 +98,7 @@ When the original payload exceeds `segmentSize`, the sender:
 - Send all segments as individual Waku envelopes,
   preserving application-level metadata (e.g., content topic).
 
-Messages smaller than or equal to `segmentSize` **SHALL** be transmitted unmodified.
+This yields a deterministic wire format: every transmitted payload is a `SegmentMessageProto`. Implementations introducing segmentation into a deployment with peers that predate this specification **MAY** instead operate in [backwards-compatible mode](#backwards-compatibility).
 
 ### Receiving
 
@@ -112,6 +115,25 @@ Upon receiving a segmented message, the receiver:
 - Once verified,
   the reconstructed payload **SHALL** be delivered to the application.
 - Incomplete reconstructions **SHOULD** be garbage-collected after a timeout.
+
+---
+
+## Backwards Compatibility
+
+Implementations **MAY** support a **backwards-compatible mode**, intended for deployments where this specification is being introduced incrementally and some peers do not yet implement segmentation.
+The mode is controlled by the `backwardsCompatible` configuration option, which defaults to `false`.
+
+When `backwardsCompatible = true`, the [Sending](#sending) procedure is amended as follows:
+
+- Payloads with size **≤ `segmentSize`** **SHALL** be transmitted unmodified, i.e., not wrapped in `SegmentMessageProto`.
+- Payloads exceeding `segmentSize` are wrapped and sent unchanged from [Sending](#sending).
+
+A receiver that interoperates with senders operating in this mode **MUST** accept both wrapped and unwrapped payloads on the same channel.
+A payload that does not parse as a valid `SegmentMessageProto` is treated as an unsegmented original payload and delivered directly to the application.
+
+**Trade-off.**
+This mode preserves on-the-wire compatibility with peers that cannot decode `SegmentMessageProto`, at the cost of the deterministic wire format described in [Sending](#sending).
+Once all peers in a deployment implement this specification, `backwardsCompatible` **SHOULD** be set to `false`.
 
 ---
 
