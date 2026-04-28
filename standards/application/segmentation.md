@@ -187,7 +187,15 @@ Libraries **SHOULD** require only `segmentSize` from the application for normal 
 ### Privacy
 
 `entire_message_hash` enables correlation of segments that belong to the same original message but does not reveal content.
+To prevent this correlation, applications **SHOULD** encrypt each segment after segmentation (see [Encryption](#encryption)).
 Traffic analysis may still identify segmented flows.
+
+### Encryption
+
+This specification does not provide confidentiality.
+Applications **SHOULD** encrypt each segment after segmentation
+(i.e., encrypt the serialized `SegmentMessageProto` prior to transmission),
+so that `entire_message_hash` and other identifying fields are not visible to observers.
 
 ### Integrity
 
