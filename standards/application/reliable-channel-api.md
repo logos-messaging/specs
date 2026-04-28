@@ -347,6 +347,20 @@ types:
     A single `ReliableSendId` therefore maps to one or more underlying `RequestId` values,
     one per segment sent."
 
+  SegmentationConfig:
+    type: object
+    fields:
+      enableReedSolomon:
+        type: bool
+        default: false
+        description: When enabled, the message sender adds parity (redundant) segments to allow recovery in case of data segment loss. See [SEGMENTATION](./segmentation.md).
+
+      segmentSizeBytes:
+        type: uint
+        default: 102400  # 100 KiB
+        description: "Maximum segment size in bytes.
+        Messages larger than this value are split before SDS processing."
+
   SdsConfig:
     type: object
     description: Scalable Data Sync config items.
