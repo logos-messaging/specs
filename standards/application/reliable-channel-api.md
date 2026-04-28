@@ -192,69 +192,6 @@ functions:
     returns:
       type: result<RequestId, error>
       description: "Returns a `RequestId` that callers can use to correlate subsequent `MessageSentEvent` or `MessageSendErrorEvent` events."
-
-  onMessageReceived:
-    description: "Subscribes a callback to be invoked when a complete message has been received and reassembled."
-    parameters:
-      - name: channel
-        type: ReliableChannel
-        description: "The channel handle returned by `createReliableChannel`."
-      - name: callback
-        type: function
-        description: "Invoked on each received message."
-        parameters:
-          - name: event
-            type: MessageReceivedEvent
-    returns:
-      type: result<void, error>
-
-  onMessageSent:
-    description: "Subscribes a callback to be invoked when all segments of a message have been transmitted to the network.
-    This confirms network-level dispatch but does not guarantee the recipient has processed the message.
-    For end-to-end confirmation, see `onMessageDelivered`."
-    parameters:
-      - name: channel
-        type: ReliableChannel
-        description: "The channel handle returned by `createReliableChannel`."
-      - name: callback
-        type: function
-        description: "Invoked when all segments of a send operation are acknowledged by the network."
-        parameters:
-          - name: event
-            type: MessageSentEvent
-    returns:
-      type: result<void, error>
-
-  onMessageDelivered:
-    description: "Subscribes a callback to be invoked when the recipient has confirmed receipt of a message via SDS acknowledgements.
-    This event is emitted asynchronously, after `MessageSentEvent`, once the SDS layer receives end-to-end acknowledgements from the recipient."
-    parameters:
-      - name: channel
-        type: ReliableChannel
-        description: "The channel handle returned by `createReliableChannel`."
-      - name: callback
-        type: function
-        description: "Invoked when the recipient confirms end-to-end delivery."
-        parameters:
-          - name: event
-            type: MessageDeliveredEvent
-    returns:
-      type: result<void, error>
-
-  onMessageSendError:
-    description: "Subscribes a callback to be invoked when a send operation fails after exhausting retransmission attempts."
-    parameters:
-      - name: channel
-        type: ReliableChannel
-        description: "The channel handle returned by `createReliableChannel`."
-      - name: callback
-        type: function
-        description: "Invoked when a send operation fails."
-        parameters:
-          - name: event
-            type: MessageSendErrorEvent
-    returns:
-      type: result<void, error>
 ```
 
 ### Node configuration
@@ -284,6 +221,10 @@ types:
     description: "A handle representing an open reliable channel.
     Returned by `createReliableChannel` and used to send messages and receive events.
     Internal state (SDS, segmentation, encryption) is managed by the implementation."
+    fields:
+      messageEvents:
+        type: MessageEvents
+        description: "The node's messaging event emitter"
 
   MessageEvents:
     type: event_emitter
