@@ -172,8 +172,6 @@ reconstruction is possible if **all data segments** are received or if **any com
 **API simplicity:**
 Libraries **SHOULD** require only `segmentSize` from the application for normal operation.
 
-
-
 ### Support
 
 - **Language / Package:** Nim;
