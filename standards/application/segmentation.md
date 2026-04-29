@@ -11,7 +11,7 @@ status: draft
 This specification defines an application-layer protocol for **segmentation** and **reconstruction** of messages carried over a transport/delivery service with a message-size limitation, when the original payload exceeds said limitation.
 Applications partition the payload into multiple transport messages and reconstruct the original on receipt,
 even when segments arrive out of order or up to a **predefined percentage** of segments are lost.
-The protocol uses **Reed–Solomon** erasure coding for fault tolerance.
+The protocol optionally uses **Reed–Solomon** erasure coding for fault tolerance.
 All messages are wrapped in a `SegmentMessageProto`, including those that fit in a single segment.
 Implementations **MAY** opt into a [backwards-compatible mode](#backwards-compatibility) that exempts small payloads from wrapping.
 
