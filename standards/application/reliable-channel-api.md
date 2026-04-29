@@ -224,14 +224,6 @@ types:
     description: "A handle representing an open reliable channel.
     Returned by `createReliableChannel` and used to send messages and receive events.
     Internal state (SDS, segmentation, encryption) is managed by the implementation."
-    fields:
-      messageEvents:
-        type: MessageEvents
-        description: "The node's messaging event emitter"
-
-  MessageEvents:
-    type: event_emitter
-    description: "Event source for reliable message events on a channel"
     events:
       "reliable:message:received":
         type: MessageReceivedEvent
@@ -241,6 +233,8 @@ types:
         type: MessageDeliveredEvent
       "reliable:message:send-error":
         type: MessageSendErrorEvent
+      "reliable:message:delivery-error":
+        type: MessageDeliveryErrorEvent
 
   MessageReceivedEvent:
     type: object
@@ -271,17 +265,27 @@ types:
 
   MessageSendErrorEvent:
     type: object
-    description: "Event emitted when a message send operation fails after exhausting retransmission attempts."
+    description: "Event emitted when one or more segments of a message could not be dispatched to the network.
+    This indicates a network-level failure; the message was never fully transmitted."
     fields:
       requestId:
         type: RequestId
-        description: "The identifier of the `send` operation that failed after exhausting retransmission attempts."
+        description: "The identifier of the `send` operation that failed to dispatch."
       error:
         type: string
-        description: "Describes the failure that prevented end-to-end delivery. Possible values:
-          - `irrecoverable_loss`: SDS marked the message as irretrievably lost — the recipient's acknowledgement was not received after `maxRetransmissions` retransmission attempts.
-          - `dispatch_failed`: the network layer rejected or could not dispatch the segment (e.g. lightpush returned `is_success: false`, or no relay/lightpush peers were reachable); propagated from the underlying [MESSAGING-API](/standards/application/messaging-api.md) `MessageSendErrorEvent` error field.
-          - `channel_closed`: the channel was closed before the recipient confirmed delivery, leaving one or more segments unacknowledged."
+        description: "Human-readable description of the dispatch failure."
+
+  MessageDeliveryErrorEvent:
+    type: object
+    description: "Event emitted when end-to-end delivery could not be confirmed.
+    Fired after `maxRetransmissions` attempts have been exhausted without receiving an SDS acknowledgement from the recipient."
+    fields:
+      requestId:
+        type: RequestId
+        description: "The identifier of the `send` operation that was not acknowledged by the recipient."
+      error:
+        type: string
+        description: "Human-readable description of the delivery failure."
 
   RequestId:
     type: string
