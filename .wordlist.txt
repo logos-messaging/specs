@@ -5,6 +5,7 @@ ALLOC
 api
 AsyncAPI
 autosharding
+ba
 AutoShardingConfig
 Backend
 backend
@@ -15,6 +16,8 @@ Bradner
 camelCase
 causalHistorySize
 cd
+da
+df
 centric
 channelConfig
 channelId
@@ -45,6 +48,7 @@ DHT
 discv
 DISCV
 DoS
+enableReedSolomon
 encodings
 encryptionKey
 enrtree
@@ -61,6 +65,7 @@ EventReliableMessageSent
 EventSource
 eventType
 fb
+fd
 fBF
 getAvailableConfigs
 getAvailableNodeInfoIds
@@ -102,6 +107,9 @@ LIGHTPUSH
 maxRetransmissions
 md
 MessageDeliveredEvent
+MessageDeliveryErrorEvent
+MessageHash
+MessageId
 messageEnvelope
 MessageEnvelope
 MessageErrorEvent
@@ -134,6 +142,7 @@ PartiallyConnected
 PascalCase
 Pax
 plaintext
+PoV
 pluggable
 Prathi
 pre
@@ -141,6 +150,7 @@ Prem
 ProtocolsConfig
 pubsub
 rateLimitConfig
+Req
 RateLimitConfig
 Raya
 Raya's
@@ -186,6 +196,7 @@ SyncStatusDetail
 SDK
 SegmentationConfig
 segmentationConfig
+segmentSizeBytes
 sharding
 SHARDING
 sqlite
@@ -193,6 +204,7 @@ subnets
 SubscriptionError
 TBD
 tcp
+th
 TCP
 TheWakuNetworkMessageValidation
 TheWakuNetworkPreset
