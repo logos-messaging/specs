@@ -1,7 +1,7 @@
 ---
 title: Message Segmentation and Reconstruction
 name: Message Segmentation and Reconstruction
-tags: [waku-application, segmentation]
+tags: [segmentation]
 version: 0.1
 status: draft
 ---
@@ -107,9 +107,9 @@ Upon receiving a segmented message, the receiver:
 
 - **MUST** validate each segment according to [Wire Format → Validation](#validation).
 - **MUST** cache received segments
-- **MUST** attempt reconstruction when the number of available (data + parity) segments equals or exceeds the data segment count:
-  - Concatenating data segments if all are present, or
-  - Applying Reed–Solomon decoding if parity segments are available.
+- **MUST** attempt reconstruction once at least `segments_count` distinct segments (data and parity combined) have been received:
+  - If all data segments are present, concatenate their `payload` fields in `index` order.
+  - Otherwise, recover the payload via Reed–Solomon decoding over the available data and parity segments.
 - **MUST** verify `Keccak256(reconstructed_payload)` matches `entire_message_hash`.
   On mismatch,
   the message **MUST** be discarded and logged as invalid.
@@ -166,8 +166,7 @@ Implementations **SHOULD** support:
     Implementation-specific parameter, fixed. The reference implementation uses **256**.
 
 **Reconstruction capability:**
-With the predefined parity rate,
-reconstruction is possible if **all data segments** are received or if **any combination of data + parity** totals at least `dataSegments` (i.e., up to the predefined percentage of loss tolerated).
+With the predefined parity rate, reconstruction is possible if **all data segments** are received or if **any combination of data + parity** totals at least `segments_count` (i.e., up to the predefined percentage of loss tolerated).
 
 **API simplicity:**
 Libraries **SHOULD** require only `segmentSize` from the application for normal operation.
