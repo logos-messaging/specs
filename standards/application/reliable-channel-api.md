@@ -18,6 +18,7 @@ editor: Logos Messaging Team
     * [Architectural position](#architectural-position)
     * [IDL](#idl)
   * [Procedures](#procedures)
+    * [Node initialization](#node-initialization)
     * [Outgoing message processing](#outgoing-message-processing)
     * [Incoming message processing](#incoming-message-processing)
     * [Rate limiting](#rate-limiting)
@@ -94,6 +95,20 @@ The Reliable Channel API sits between the application layer and the Messaging AP
 A custom Interface Definition Language (IDL) in YAML is used, consistent with [MESSAGING-API](/standards/application/messaging-api.md).
 
 ## Procedures
+
+### Node initialization
+
+When a node is created via `createNode` (defined in [MESSAGING-API](/standards/application/messaging-api.md)),
+the implementation MUST perform the following setup before the node is used:
+
+1. **Configure SDS persistence**: Supply the `Persistence` backend from `SdsConfig` to the SDS module so that
+   causal history and outgoing buffers survive restarts.
+2. **Configure SDS hint provider**: Register a hint provider with the SDS module.
+   The hint provider converts an SDS `MessageId` into its corresponding `MessageHash`.
+3. **Configure Segmentation persistence**: Supply the `Persistence` backend from `SegmentationConfig` to the
+   [Segmentation](./segmentation.md) module so that partially reassembled messages survive restarts.
+4. **Fetch missed messages**: Retrieve messages missed while offline as described in
+   [MESSAGING-API — Fetching missed messages on startup](/standards/application/messaging-api.md#init-node-extended-definitions).
 
 ### Outgoing message processing
 
@@ -310,12 +325,16 @@ types:
         type: bool
         default: false
         description: When enabled, the message sender adds parity (redundant) segments to allow recovery in case of data segment loss. See [SEGMENTATION](./segmentation.md).
-
       segmentSizeBytes:
         type: uint
         default: 102400  # 100 KiB
         description: "Maximum segment size in bytes.
         Messages larger than this value are split before SDS processing."
+      persistence:
+        type: Persistence
+        description: "Backend for persisting partial reassembly state across restarts.
+        Implementations MUST use this backend to store received segments until all segments of a message have arrived and can be reassembled.
+        Refer to [SEGMENTATION](./segmentation.md) for the full definition of what state must be persisted."
 
   SdsConfig:
     type: object
