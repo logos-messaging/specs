@@ -212,9 +212,6 @@ NodeConfig:  # Extends NodeConfig defined in MESSAGING-API
     sds_config:
       type: SdsConfig
       description: "SDS configuration. See SdsConfig defined in this spec."
-    rate_limit_config:
-      type: RateLimitConfig
-      description: "Rate limiting configuration, including RLN-specific attributes. See RateLimitConfig defined in this spec."
 ```
 
 ### Type definitions
