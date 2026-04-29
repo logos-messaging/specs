@@ -344,15 +344,6 @@ If the `mode` set is `core`, the initialised `WakuNode` SHOULD use:
 `edge` mode SHOULD be used if node functions in resource restricted environment,
 whereas `core` SHOULD be used if node has no strong hardware or bandwidth restrictions.
 
-**Fetching missed messages on startup**:
-
-The node MUST persist the timestamp of the last message it successfully received or sent before going offline.
-
-After the node is started and subscriptions are set up, the node SHOULD query the
-[STORE](https://lip.logos.co/messaging/standards/core/13/store.html) protocol to retrieve messages
-missed while offline, scoped to the subscribed content topics and using the persisted timestamp as the
-lower bound of the query.
-
 ### Messaging
 
 #### Messaging type definitions
