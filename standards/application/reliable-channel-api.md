@@ -100,10 +100,16 @@ A custom Interface Definition Language (IDL) in YAML is used, consistent with [M
 When `send` is called, the implementation MUST process `message` in the following order:
 
 1. **Segment**: Split the payload into segments as defined in [SEGMENTATION](./segmentation.md). The maximum segment size MUST be reduced by the size of the SDS header added in step 2, so that each segment together with its SDS header stays within the network message size limit.
-2. **Apply [SDS](https://lip.logos.co/ift-ts/raw/sds.html)**: Register each segment with the SDS layer to track acknowledgements and enable retransmission.
+2. **Apply [SDS](https://lip.logos.co/ift-ts/raw/sds.html)** for each segment that is sent:
+  - Generate a random MessageId. 40-char long. e.g. `a23f89b4df7e1ba5a709352da3a247a4fd609f4c`.
+  - Persist the MessageId plus the payload for the current segment being sent.
+  - Get the retrieval hint from previously persisted messages (see point 5.).
 3. **Encrypt**: If an `Encryption` implementation is provided, encrypt each segment before transmission.
 4. **Rate Limit**: If `RateLimitConfig.enabled` is `true`, delay dispatch as needed to comply with [RLN](https://lip.logos.co/messaging/standards/core/17/rln-relay.html) epoch constraints.
-5. **Dispatch**: Send each segment via the underlying [MESSAGING-API](/standards/application/messaging-api.md).
+5. **Dispatch**
+  - Send each segment via the underlying [MESSAGING-API](/standards/application/messaging-api.md).
+  - Update the persisted MessageId entry, in point 2., with the sent MessageHash, only when
+    the event `MessageSendPropagatedEvent` is triggered (that event is defined in [MESSAGING-API](/standards/application/messaging-api.md)).
 
 ### Incoming message processing
 
