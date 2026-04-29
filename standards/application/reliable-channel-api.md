@@ -17,6 +17,11 @@ editor: Logos Messaging Team
   * [API design](#api-design)
     * [Architectural position](#architectural-position)
     * [IDL](#idl)
+  * [Components](#components)
+    * [Segmentation](#segmentation)
+    * [Scalable Data Sync (SDS)](#scalable-data-sync-sds)
+    * [Rate Limit Manager](#rate-limit-manager)
+    * [Encryption Hook](#encryption-hook)
   * [Procedures](#procedures)
     * [Node initialization](#node-initialization)
     * [Outgoing message processing](#outgoing-message-processing)
@@ -28,11 +33,6 @@ editor: Logos Messaging Team
     * [Channel usage](#channel-usage)
     * [Node configuration](#node-configuration)
     * [Type definitions](#type-definitions)
-  * [Components](#components)
-    * [Segmentation](#segmentation)
-    * [Scalable Data Sync (SDS)](#scalable-data-sync-sds)
-    * [Rate Limit Manager](#rate-limit-manager)
-    * [Encryption Hook](#encryption-hook)
   * [Security/Privacy Considerations](#securityprivacy-considerations)
   * [Copyright](#copyright)
 <!-- TOC -->
@@ -44,7 +44,6 @@ an application-level interface that sits between the application layer and the [
 
 It bundles segmentation, end-to-end reliability via [Scalable Data Sync (SDS)](https://lip.logos.co/ift-ts/raw/sds.html), rate limit management, and a pluggable encryption hook
 into a single interface for sending and receiving messages reliably.
-
 
 ## Motivation
 
@@ -93,6 +92,40 @@ The Reliable Channel API sits between the application layer and the Messaging AP
 ### IDL
 
 A custom Interface Definition Language (IDL) in YAML is used, consistent with [MESSAGING-API](/standards/application/messaging-api.md).
+
+## Components
+
+### Segmentation
+
+See [SEGMENTATION](./segmentation.md).
+
+### Scalable Data Sync (SDS)
+
+[SDS](https://lip.logos.co/ift-ts/raw/sds.html) provides end-to-end delivery guarantees using causal history tracking.
+
+- Each sent segment is registered in an outgoing buffer.
+- The recipient sends acknowledgements back to the sender upon receiving segments.
+- The sender removes acknowledged segments from the outgoing buffer.
+- Unacknowledged segments are retransmitted after `acknowledgementTimeoutMs`.
+- SDS state MUST be persisted using the `persistence` backend configured in `SdsConfig`.
+
+### Rate Limit Manager
+
+The Rate Limit Manager ensures compliance with [RLN](https://lip.logos.co/messaging/standards/core/17/rln-relay.html) rate constraints.
+
+- It tracks how many messages have been sent in the current epoch (only the first segment of each message counts toward the rate limit; subsequent segments are exempt).
+- When the limit is approached, segment dispatch MUST be delayed to the next epoch.
+- The epoch size MUST match the `epochSizeMs` configured in `RateLimitConfig`.
+
+### Encryption Hook
+
+The Encryption Hook provides a pluggable interface for upper layers to inject encryption.
+
+- The hook is optional; when not provided, messages are sent unencrypted.
+- Encryption is applied per segment, after segmentation and SDS registration.
+- Decryption is applied per segment, before SDS delivery.
+- The `Encryption` interface MUST be implemented by the caller.
+- The Reliable Channel API MUST NOT impose any specific encryption scheme.
 
 ## Procedures
 
@@ -398,40 +431,6 @@ types:
     Implementations MUST provide all functions required to save and retrieve SDS state per channel. Implementations MUST also provide the persistence method of interest, e.g., SQLite, custom encrypted storage, etc.
     Refer to the [SDS spec](https://lip.logos.co/ift-ts/raw/sds.html) for the full definition of what state must be persisted."
 ```
-
-## Components
-
-### Segmentation
-
-See [SEGMENTATION](./segmentation.md).
-
-### Scalable Data Sync (SDS)
-
-[SDS](https://lip.logos.co/ift-ts/raw/sds.html) provides end-to-end delivery guarantees using causal history tracking.
-
-- Each sent segment is registered in an outgoing buffer.
-- The recipient sends acknowledgements back to the sender upon receiving segments.
-- The sender removes acknowledged segments from the outgoing buffer.
-- Unacknowledged segments are retransmitted after `acknowledgementTimeoutMs`.
-- SDS state MUST be persisted using the `persistence` backend configured in `SdsConfig`.
-
-### Rate Limit Manager
-
-The Rate Limit Manager ensures compliance with [RLN](https://lip.logos.co/messaging/standards/core/17/rln-relay.html) rate constraints.
-
-- It tracks how many messages have been sent in the current epoch (only the first segment of each message counts toward the rate limit; subsequent segments are exempt).
-- When the limit is approached, segment dispatch MUST be delayed to the next epoch.
-- The epoch size MUST match the `epochSizeMs` configured in `RateLimitConfig`.
-
-### Encryption Hook
-
-The Encryption Hook provides a pluggable interface for upper layers to inject encryption.
-
-- The hook is optional; when not provided, messages are sent unencrypted.
-- Encryption is applied per segment, after segmentation and SDS registration.
-- Decryption is applied per segment, before SDS delivery.
-- The `Encryption` interface MUST be implemented by the caller.
-- The Reliable Channel API MUST NOT impose any specific encryption scheme.
 
 ## Security/Privacy Considerations
 
