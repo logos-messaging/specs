@@ -13,7 +13,6 @@ Applications partition the payload into multiple transport messages and reconstr
 even when segments arrive out of order or up to a **predefined percentage** of segments are lost.
 The protocol optionally uses **Reed–Solomon** erasure coding for fault tolerance.
 All messages are wrapped in a `SegmentMessageProto`, including those that fit in a single segment.
-Implementations **MAY** opt into a [backwards-compatible mode](#backwards-compatibility) that exempts small payloads from wrapping.
 
 ## Motivation
 
@@ -99,7 +98,7 @@ To transmit a payload, the sender:
 - Send each segment as an individual transport message according to the underlying transport protocol,
   preserving application-level metadata (e.g., content topic).
 
-This yields a deterministic wire format: every transmitted payload is a `SegmentMessageProto`. Implementations introducing segmentation into a deployment with peers that predate this specification **MAY** instead operate in [backwards-compatible mode](#backwards-compatibility).
+This yields a deterministic wire format: every transmitted payload is a `SegmentMessageProto`.
 
 ### Receiving
 
@@ -116,25 +115,6 @@ Upon receiving a segmented message, the receiver:
 - Once verified,
   the reconstructed payload **SHALL** be delivered to the application.
 - Incomplete reconstructions **SHOULD** be garbage-collected after a timeout.
-
----
-
-## Backwards Compatibility
-
-Implementations **MAY** support a **backwards-compatible mode**, intended for deployments where this specification is being introduced incrementally and some peers do not yet implement segmentation.
-The mode is controlled by the `backwardsCompatible` configuration option, which defaults to `false`.
-
-When `backwardsCompatible = true`, the [Sending](#sending) procedure is amended as follows:
-
-- Payloads with size **≤ `segmentSize`** **SHALL** be transmitted unmodified, i.e., not wrapped in `SegmentMessageProto`.
-- Payloads exceeding `segmentSize` are wrapped and sent unchanged from [Sending](#sending).
-
-A receiver that interoperates with senders operating in this mode **MUST** accept both wrapped and unwrapped payloads on the same channel.
-A payload that does not parse as a valid `SegmentMessageProto` is treated as an unsegmented original payload and delivered directly to the application.
-
-**Trade-off.**
-This mode preserves on-the-wire compatibility with peers that cannot decode `SegmentMessageProto`, at the cost of the deterministic wire format described in [Sending](#sending).
-Once all peers in a deployment implement this specification, `backwardsCompatible` **SHOULD** be set to `false`.
 
 ---
 
