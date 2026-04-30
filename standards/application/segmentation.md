@@ -44,38 +44,43 @@ message SegmentMessageProto {
   bytes  entire_message_hash    = 1;
 
   // Data segment indexing
-  uint32 index                  = 2; // zero-based sequence number; valid only if segments_count > 0
-  uint32 segments_count         = 3; // number of data segments
+  uint32 index                  = 2; // zero-based sequence number for data segments
+  uint32 segments_count         = 3; // number of data segments (>= 1)
 
   // Segment payload (data or parity shard)
   bytes  payload                = 4;
 
-  // Parity segment indexing (used if segments_count == 0)
+  // Parity segment indexing
   uint32 parity_segment_index   = 5; // zero-based sequence number for parity segments
   uint32 parity_segments_count  = 6; // number of parity segments
+
+  // Segment type
+  bool   is_parity              = 7; // true for parity segments, false (default) for data segments
 }
 ```
 
 **Field descriptions:**
 
 - `entire_message_hash`: A 32-byte Keccak256 hash of the original complete payload, used to identify which segments belong together and verify reconstruction integrity.
-- `index`: Zero-based sequence number identifying this data segment's position (0, 1, 2, ..., segments_count - 1).
-- `segments_count`: Total number of data segments the original message was split into.
+- `index`: Zero-based sequence number identifying this data segment's position (0, 1, 2, ..., segments_count - 1). Set only on data segments.
+- `segments_count`: Total number of data segments the original message was split into. Set on every segment (data and parity).
 - `payload`: The actual chunk of data or parity information for this segment.
-- `parity_segment_index`: Zero-based sequence number for parity segments.
-- `parity_segments_count`: Total number of parity segments generated.
+- `parity_segment_index`: Zero-based sequence number for parity segments. Set only on parity segments.
+- `parity_segments_count`: Total number of parity segments generated. Set on every segment (data and parity) when Reed–Solomon parity is used; `0` (default) otherwise.
+- `is_parity`: Explicit segment type marker. `false` (default) for data segments; `true` for parity segments.
 
-A message is either a **data segment** (when `segments_count > 0`) or a **parity segment** (when `segments_count == 0`).
+A message is either a **data segment** (when `is_parity == false`) or a **parity segment** (when `is_parity == true`).
 
 ### Validation
 
 Receivers **MUST** enforce:
 
 - `entire_message_hash.length == 32`
-- **Data segments:**
-  `segments_count >= 1` **AND** `index < segments_count`
-- **Parity segments:**
-  `segments_count == 0` **AND** `parity_segments_count > 0` **AND** `parity_segment_index < parity_segments_count`
+- `segments_count >= 1`
+- **Data segments** (`is_parity == false`):
+  `index < segments_count`
+- **Parity segments** (`is_parity == true`):
+  `parity_segments_count > 0` AND `parity_segment_index < parity_segments_count`
 
 No other combinations are permitted.
 A `SegmentMessageProto` with `segments_count == 1` and `index == 0` is a valid single-segment data message: the `payload` field carries the entire original payload (see [Sending](#sending)).
@@ -91,9 +96,12 @@ To transmit a payload, the sender:
   each of size up to `segmentSize` bytes.
   A payload of size ≤ `segmentSize` produces a single data segment (`segments_count == 1`).
 - **MAY** use Reed–Solomon erasure coding at the predefined parity rate.
-- Encode each segment as a `SegmentMessageProto` with:
+- **MUST** encode every segment as a `SegmentMessageProto` with:
   - The `entire_message_hash`
-  - Either data-segment indices (`segments_count`, `index`) or parity-segment indices (`parity_segments_count`, `parity_segment_index`)
+  - `segments_count` (total number of data segments, always set)
+  - When Reed–Solomon parity is used, `parity_segments_count` (total number of parity segments, set on every segment)
+  - For data segments: `is_parity = false`, `index`
+  - For parity segments: `is_parity = true`, `parity_segment_index`
   - The raw payload data
 - Send each segment as an individual transport message according to the underlying transport protocol,
   preserving application-level metadata (e.g., content topic).
