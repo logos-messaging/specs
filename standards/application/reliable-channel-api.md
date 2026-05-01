@@ -114,7 +114,7 @@ See [SEGMENTATION](./segmentation.md).
   - Retrieval hint: the transport `MessageHash` of previous segments, exposed by the underlying [MESSAGING-API](/standards/application/messaging-api.md) upon ``MessageSendPropagatedEvent` reception.
   The hint provider registered during [Node initialization](#node-initialization) performs this `MessageId → MessageHash` lookup. In turn, that mapping MUST be persisted by SDS using the `persistence` backend configured in `SdsConfig`.
 
-- Each sent segment is registered in an outgoing buffer.
+- Each sent segment is added to an outgoing buffer.
 - The recipient sends acknowledgements back to the sender upon receiving segments.
 - The sender removes acknowledged segments from the outgoing buffer.
 - Unacknowledged segments are retransmitted after `acknowledgementTimeoutMs`.
@@ -133,8 +133,8 @@ The Rate Limit Manager ensures compliance with [RLN](https://lip.logos.co/messag
 The Encryption Hook provides a pluggable interface for upper layers to inject encryption.
 
 - The hook is optional; when not provided, messages are sent unencrypted.
-- Encryption is applied per segment, after segmentation and SDS registration.
-- Decryption is applied per segment, before SDS delivery.
+- Encryption is applied per segment, after segmentation and SDS.
+- Decryption is applied per segment before being processed by SDS.
 - The `Encryption` interface MUST be implemented by the caller.
 - The Reliable Channel API MUST NOT impose any specific encryption scheme.
 
