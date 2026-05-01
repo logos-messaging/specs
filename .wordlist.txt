@@ -1,5 +1,6 @@
 ABIs
 acknowledgementTimeoutMs
+aea
 addListener
 ALLOC
 api
@@ -7,6 +8,8 @@ AsyncAPI
 autosharding
 ba
 AutoShardingConfig
+Baggs
+Bande
 Backend
 backend
 backends
@@ -53,6 +56,8 @@ encodings
 encryptionKey
 enrtree
 enum
+ec
+epochPeriodSec
 epochSizeMs
 eth
 Eth
@@ -65,7 +70,9 @@ EventReliableMessageSent
 EventSource
 eventType
 fb
+fc
 fd
+Folgueira
 fBF
 getAvailableConfigs
 getAvailableNodeInfoIds
@@ -96,6 +103,7 @@ ipv
 iterable
 Jazzz
 JSON
+keccak
 KiB
 Kozlov
 lifecycle
@@ -183,6 +191,7 @@ rpc
 RPC
 Saro
 Scalable
+Sirotin
 sds
 SDS
 SDS'ed
