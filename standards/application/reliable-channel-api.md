@@ -170,7 +170,7 @@ When a segment is received from the network, the implementation MUST process it 
 
 1. **Decrypt**: If an `Encryption` implementation is provided, decrypt the segment.
 2. **Apply [SDS](https://lip.logos.co/ift-ts/raw/sds.html)**: Deliver the segment to the SDS layer, which emits acknowledgements and detects gaps.
-   - **Detect missing dependencies**: If SDS detects a message in the causal history which has not yet been received, it MUST make a best-effort attempt to retrieve the missing message, and MAY use the store protocol internally for this purpose. If the message cannot be retrieved, SDS MAY mark it as lost.
+   - **Detect missing dependencies**: If SDS detects a gap in the causal history, it MUST make a best-effort attempt to retrieve the missing message. The `Retrieval hint` (see [Scalable Data Sync (SDS)](#scalable-data-sync-sds)) carried in each SDS message provides the transport `MessageHash` needed to query the store; without it, store retrieval is not possible. If the message cannot be retrieved, SDS MAY mark it as lost.
 3. **Reassemble**: Once all segments for a message have been received, reassemble and emit a `reliable:message:received` event.
 
 ### Rate limiting
