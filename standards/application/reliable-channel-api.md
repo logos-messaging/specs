@@ -239,7 +239,7 @@ functions:
 functions:
   send:
     description: "Send a message through a reliable channel. The message is always segmented,
-    SDS-tracked, rate-limited, and encrypted (if configured)."
+    SDS-tracked, rate-limited (optional), and encrypted (optional)."
     parameters:
       - name: channel
         type: ReliableChannel
