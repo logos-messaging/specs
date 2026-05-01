@@ -158,7 +158,7 @@ the implementation MUST perform the following setup before the node is used:
 
 When `send` is called, the implementation MUST process `message` in the following order:
 
-1. **Segment**: Split the payload into segments as defined in [SEGMENTATION](./segmentation.md). The maximum segment size MUST be reduced by the size of the SDS header (all that is not content, considering [SDS message](https://lip.logos.co/ift-ts/raw/sds.html#message)) added in step 2, so that each segment together with its SDS header stays within the network message size limit.
+1. **Segment**: Split the payload into segments as defined in [SEGMENTATION](./segmentation.md).
 2. **Apply [SDS](https://lip.logos.co/ift-ts/raw/sds.html)**: add each sds message to the SDS outgoing buffer (see [SDS](#scalable-data-sync-sds) for parameter bindings).
 3. **Encrypt**: If an `Encryption` implementation is provided, encrypt each segment before transmission.
 4. **Rate Limit**: If `RateLimitConfig.enabled` is `true`, delay dispatch as needed to comply with [RLN](https://lip.logos.co/messaging/standards/core/17/rln-relay.html) epoch constraints.
