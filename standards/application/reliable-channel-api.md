@@ -1,0 +1,449 @@
+---
+title: RELIABLE-CHANNEL-API
+name: Reliable Channel API definition
+category: Standards Track
+status: raw
+tags: [reliability, application, api, sds, segmentation]
+editors: 
+- Igor Sirotin <sirotin@status.im>
+- Jazz Turner-Baggs <jazz@status.im>
+- Ivan Folgueira Bande <ivansete@status.im>
+---
+
+## Table of contents
+
+<!-- TOC -->
+  * [Table of contents](#table-of-contents)
+  * [Abstract](#abstract)
+  * [Motivation](#motivation)
+  * [Syntax](#syntax)
+  * [API design](#api-design)
+    * [Architectural position](#architectural-position)
+    * [IDL](#idl)
+  * [Components](#components)
+    * [Segmentation](#segmentation)
+    * [Scalable Data Sync (SDS)](#scalable-data-sync-sds)
+    * [Rate Limit Manager](#rate-limit-manager)
+    * [Encryption Hook](#encryption-hook)
+  * [Procedures](#procedures)
+    * [Node initialization](#node-initialization)
+    * [Outgoing message processing](#outgoing-message-processing)
+    * [Incoming message processing](#incoming-message-processing)
+    * [Rate limiting](#rate-limiting)
+    * [Encryption](#encryption)
+  * [The Reliable Channel API](#the-reliable-channel-api)
+    * [Channel lifecycle](#channel-lifecycle)
+    * [Channel usage](#channel-usage)
+    * [Node configuration](#node-configuration)
+    * [Type definitions](#type-definitions)
+  * [Security/Privacy Considerations](#securityprivacy-considerations)
+  * [Copyright](#copyright)
+<!-- TOC -->
+
+## Abstract
+
+This document specifies the **Reliable Channel API**,
+an application-level interface that sits between the application layer and the [MESSAGING-API](/standards/application/messaging-api.md) plus [P2P-RELIABILITY](/standards/application/p2p-reliability.md), i.e., `application` <-> **reliable-channel-api** <-> `messaging-api/p2p-reliability`.
+
+It bundles segmentation, end-to-end reliability via [Scalable Data Sync (SDS)](https://lip.logos.co/ift-ts/raw/sds.html), rate limit management, and a pluggable encryption hook
+into a single interface for sending and receiving messages reliably.
+
+## Motivation
+
+The [MESSAGING-API](/standards/application/messaging-api.md) provides peer-to-peer reliability via [P2P-RELIABILITY](/standards/application/p2p-reliability.md),
+but does not provide high end-to-end delivery guarantees from sender to recipient.
+
+This API addresses that gap by introducing:
+- **[SEGMENTATION](/standards/application/segmentation.md)** to handle large messages exceeding network size limits.
+- **[SDS](https://lip.logos.co/ift-ts/raw/sds.html)** to provide causal-history-based end-to-end acknowledgement and retransmission.
+- **Rate Limit Manager** to comply with [RLN](https://lip.logos.co/messaging/standards/core/17/rln-relay.html) constraints when sending segmented messages.
+- **Encryption Hook** to allow upper layers to provide a pluggable encryption mechanism. This enables applications to provide Confidentiality and Integrity if desired. 
+
+The separation between Reliable Channels and encryption ensures the API remains agnostic to identity and key management concerns,
+which are handled by higher layers.
+
+## Syntax
+
+The keywords "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT",
+"RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in [RFC2119](https://www.ietf.org/rfc/rfc2119.txt).
+
+## API design
+
+### Architectural position
+
+The Reliable Channel API sits between the application layer and the Messaging API, as follows:
+
+```
+┌────────────────────────────────────────────────────────────┐
+│                   Application Layer                        │
+└───────────────────────────┬────────────────────────────────┘
+                            │
+┌───────────────────────────▼────────────────────────────────┐
+│                 Reliable Channel API                       │
+│  ┌──────────────┐ ┌─────┐ ┌───────────────┐ ┌──────────┐   │
+│  │ Segmentation │ │ SDS │ │ Rate Limit Mgr│ │Encryption│   │
+│  │              │ │     │ │               │ │   Hook   │   │
+│  └──────────────┘ └─────┘ └───────────────┘ └──────────┘   │
+└───────────────────────────┬────────────────────────────────┘
+                            │
+┌───────────────────────────▼────────────────────────────────┐
+│                    Messaging API                           │
+│      (P2P Reliability, Relay, Filter, Lightpush, Store)    │
+└────────────────────────────────────────────────────────────┘
+```
+
+### IDL
+
+A custom Interface Definition Language (IDL) in YAML is used, consistent with [MESSAGING-API](/standards/application/messaging-api.md).
+
+## Components
+
+### Segmentation
+
+A protocol that splits message payloads into smaller units during transmission and reassembles them upon reception. The component is instantiated by supplying the appropriate value to SegmentationConfig.
+
+See [SEGMENTATION](./segmentation.md).
+
+### Scalable Data Sync (SDS)
+
+[SDS](https://lip.logos.co/ift-ts/raw/sds.html) provides end-to-end delivery guarantees using causal history tracking.
+
+- Each new segment to be sent, requires the following data:
+  - `MessageId`: a keccak-256([message](https://lip.logos.co/ift-ts/raw/sds.html#message)'s content) hex string (e.g. `4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45`), generated by the Reliable Channel API.
+  - `ChannelId`: the `channelId` passed to `createReliableChannel`.
+  - `Retrieval hint`: the transport `MessageHash` of previous segments, mentioned as `message_hash` in [MESSAGING-API](/standards/application/messaging-api.md), upon ``MessageSendPropagatedEvent` reception.
+  The hint provider registered during [Node initialization](#node-initialization) performs this `MessageId → MessageHash` lookup. In turn, that mapping MUST be persisted by SDS using the `persistence` backend configured in `SdsConfig`.
+
+- Each sent segment is added to an outgoing buffer.
+- The recipient sends acknowledgements back to the sender upon receiving segments.
+- The sender removes acknowledged segments from the outgoing buffer.
+- Unacknowledged segments are retransmitted after `acknowledgementTimeoutMs`.
+- SDS state MUST be persisted using the `persistence` backend configured in `SdsConfig`.
+
+### Rate Limit Manager
+
+The Rate Limit Manager ensures compliance with [RLN](https://lip.logos.co/messaging/standards/core/17/rln-relay.html) rate constraints.
+
+- It tracks how many messages have been sent in the current epoch.
+- When the limit is approached, segment dispatch MUST be delayed to the next epoch.
+- The epoch size MUST match the `[epochPeriodSec](https://lip.logos.co/messaging/standards/core/17/rln-relay.html#epoch-length)` configured in `RateLimitConfig`.
+
+### Encryption Hook
+
+The Encryption Hook provides a pluggable interface for upper layers to inject encryption.
+
+- The hook is optional; when not provided, messages are sent unencrypted.
+- Encryption is applied per segment, after segmentation and SDS.
+- Decryption is applied per segment before being processed by SDS.
+- The `Encryption` interface MUST be implemented by the caller when the hook is provided.
+- The Reliable Channel API MUST NOT impose any specific encryption scheme.
+
+## Procedures
+
+### Node initialization
+
+When a node is created via `createNode` (defined in [MESSAGING-API](/standards/application/messaging-api.md)),
+the implementation MUST perform the following setup before the node is used:
+
+1. **Configure SDS persistence**: Supply the `Persistence` backend from `SdsConfig` to the SDS module so that
+   causal history and outgoing buffers survive restarts.
+2. **Configure SDS hint provider**: Register a hint provider with the SDS module.
+   The hint provider converts an SDS `MessageId` into its corresponding `MessageHash`.
+3. **Configure Segmentation persistence**: Supply the `Persistence` backend from `SegmentationConfig` to the
+   [Segmentation](./segmentation.md) module so that partially reassembled messages survive restarts.
+4. **Fetch missed messages**: Retrieve messages missed while offline as described in
+   [MESSAGING-API — Fetching missed messages on startup](/standards/application/messaging-api.md#init-node-extended-definitions).
+
+### Outgoing message processing
+
+When `send` is called, the implementation MUST process `message` in the following order:
+
+1. **Segment**: Split the payload into segments as defined in [SEGMENTATION](./segmentation.md).
+2. **Apply [SDS](https://lip.logos.co/ift-ts/raw/sds.html)**: add each sds message to the SDS outgoing buffer (see [SDS](#scalable-data-sync-sds) for parameter bindings).
+3. **Encrypt**: If an `Encryption` implementation is provided, encrypt each segment before transmission.
+4. **Rate Limit**: If `RateLimitConfig.enabled` is `true`, delay dispatch as needed to comply with [RLN](https://lip.logos.co/messaging/standards/core/17/rln-relay.html) epoch constraints.
+5. **Dispatch**: Send each segment via the underlying [MESSAGING-API](/standards/application/messaging-api.md).
+
+### Incoming message processing
+
+When a segment is received from the network, the implementation MUST process it in the following order:
+
+1. **Decrypt**: If an `Encryption` implementation is provided, decrypt the segment.
+2. **Apply [SDS](https://lip.logos.co/ift-ts/raw/sds.html)**: Deliver the segment to the SDS layer, which emits acknowledgements and detects gaps.
+   - **Detect missing dependencies**: If SDS detects a gap in the causal history, it MUST make a best-effort attempt to retrieve the missing message. The `Retrieval hint` (see [Scalable Data Sync (SDS)](#scalable-data-sync-sds)) carried in each SDS message provides the transport `MessageHash` needed to query the store; without it, store retrieval is not possible. If the message cannot be retrieved, SDS MAY mark it as lost.
+3. **Reassemble**: Once all segments for a message have been received, reassemble and emit a `reliable:message:received` event.
+
+### Rate limiting
+
+When `RateLimitConfig.enabled` is `true`, the implementation MUST space segment transmissions
+to comply with the [RLN](https://lip.logos.co/messaging/standards/core/17/rln-relay.html) epoch constraints defined in `[epochPeriodSec](https://lip.logos.co/messaging/standards/core/17/rln-relay.html#epoch-length)`.
+Segments MUST NOT be sent at a rate that would violate the RLN message rate limit for the active epoch.
+
+### Encryption
+
+The `encryption` parameter in `createReliableChannel` is intentionally optional.
+The Reliable Channel API is agnostic to encryption mechanisms.
+
+When an `Encryption` implementation is provided, it MUST be applied as described in [Outgoing message processing](#outgoing-message-processing) and [Incoming message processing](#incoming-message-processing).
+
+## The Reliable Channel API
+
+This API considers the types defined by [MESSAGING-API](/standards/application/messaging-api.md) plus the following.
+
+### Channel lifecycle
+
+This point assumes that a WakuNode instance is created beforehand. See `createNode` function
+in [MESSAGING-API](/standards/application/messaging-api.md).
+
+```yaml
+functions:
+
+  createReliableChannel:
+    description: "Creates a reliable channel over the given content topic. Sets up the required SDS state,
+    segmentation, and encryption, and subscribes to `contentTopic`."
+    parameters:
+      - name: node
+        type: WakuNode
+        description: "The underlying messaging node, as defined in [MESSAGING-API](/standards/application/messaging-api.md).
+        Used to send segments and to subscribe/unsubscribe to the content topics."
+      - name: channelId
+        type: string
+        description: "Unique identifier for this channel. Represents the reliable (SDS), segmented, and optionally-encrypted session."
+      - name: contentTopic
+        type: string
+        description: "The topic this channel listens and sends on. This has routing and filtering connotations."
+      - name: senderId
+        type: string
+        description: "An identifier for this sender. SHOULD be unique and persisted between sessions."
+      - name: encryption
+        type: optional<Encryption>
+        default: none
+        description: "Optional pluggable encryption implementation. If none, messages are sent unencrypted."
+    returns:
+      type: result<ReliableChannel, error>
+
+  closeChannel:
+    description: "Closes a reliable channel, releases all associated resources and internal state,
+    and unsubscribes from its content topic via the underlying [MESSAGING-API](/standards/application/messaging-api.md)."
+    parameters:
+      - name: channel
+        type: ReliableChannel
+        description: "The channel handle returned by `createReliableChannel`."
+    returns:
+      type: result<void, error>
+```
+
+### Channel usage
+
+```yaml
+functions:
+  send:
+    description: "Send a message through a reliable channel. The message is always segmented,
+    SDS-tracked, rate-limited (optional), and encrypted (optional)."
+    parameters:
+      - name: channel
+        type: ReliableChannel
+        description: "The channel handle returned by `createReliableChannel`."
+      - name: message
+        type: array<byte>
+        description: "The raw message payload to send."
+    returns:
+      type: result<RequestId, error>
+      description: "Returns a `RequestId` that callers can use to correlate subsequent `MessageSentEvent` or `MessageSendErrorEvent` events."
+```
+
+### Node configuration
+
+This spec extends `NodeConfig`, needed to create a node, which is 
+defined in [MESSAGING-API](/standards/application/messaging-api.md), 
+with `sds_config` and `rate_limit_config` fields.
+
+```yaml
+NodeConfig:  # Extends NodeConfig defined in MESSAGING-API
+  fields:
+    sds_config:
+      type: SdsConfig
+      description: "SDS configuration. See SdsConfig defined in this spec."
+```
+
+### Type definitions
+
+```yaml
+types:
+
+  ReliableChannel:
+    type: object
+    description: "A handle representing an open reliable channel.
+    Returned by `createReliableChannel` and used to send messages and receive events.
+    Internal state (SDS, segmentation, encryption) is managed by the implementation."
+    events:
+      "reliable:message:received":
+        type: MessageReceivedEvent
+      "reliable:message:sent":
+        type: MessageSentEvent
+      "reliable:message:delivered":
+        type: MessageDeliveredEvent
+      "reliable:message:send-error":
+        type: MessageSendErrorEvent
+      "reliable:message:delivery-error":
+        type: MessageDeliveryErrorEvent
+
+  MessageReceivedEvent:
+    type: object
+    description: "Event emitted when a complete message has been received and reassembled."
+    fields:
+      message:
+        type: array<byte>
+        description: "The reassembled message payload."
+
+  MessageSentEvent:
+    type: object
+    description: "Event emitted when all segments of a message have been transmitted to the network.
+    This confirms network-level dispatch only; it does not guarantee the recipient has processed the message.
+    For end-to-end confirmation, listen for `MessageDeliveredEvent`."
+    fields:
+      requestId:
+        type: RequestId
+        description: "The identifier of the `send` operation whose segments have all been dispatched to the network."
+
+  MessageDeliveredEvent:
+    type: object
+    description: "Event emitted when the recipient has confirmed end-to-end receipt of a message via SDS acknowledgements.
+    This event is fired asynchronously after `MessageSentEvent`, once the SDS layer receives explicit acknowledgements from the recipient."
+    fields:
+      requestId:
+        type: RequestId
+        description: "The identifier of the `send` operation confirmed as delivered by the recipient."
+
+  MessageSendErrorEvent:
+    type: object
+    description: "Event emitted when one or more segments of a message could not be dispatched to the network.
+    This indicates a network-level failure; the message was never fully transmitted."
+    fields:
+      requestId:
+        type: RequestId
+        description: "The identifier of the `send` operation that failed to dispatch."
+      error:
+        type: string
+        description: "Human-readable description of the dispatch failure."
+
+  MessageDeliveryErrorEvent:
+    type: object
+    description: "Event emitted when end-to-end delivery could not be confirmed.
+    The message reached the network and there's no need to explicit re-send.
+    Fired after `maxRetransmissions` attempts have been exhausted without receiving an SDS acknowledgement from the recipient."
+    fields:
+      requestId:
+        type: RequestId
+        description: "The identifier of the `send` operation that was not acknowledged by the recipient."
+      error:
+        type: string
+        description: "Human-readable description of the delivery failure."
+
+  RequestId:
+    type: string
+    description: "Unique identifier for a single `send` operation on a reliable channel.
+    It groups all segments produced by segmenting one message, so callers can correlate
+    acknowledgement and error events back to the original send call.
+    Internally, each segment is dispatched as an independent [MESSAGING-API](/standards/application/messaging-api.md) call,
+    producing one `RequestId` (as defined in [MESSAGING-API](/standards/application/messaging-api.md)) per segment.
+    A single `RequestId` therefore maps to one or more underlying [MESSAGING-API](/standards/application/messaging-api.md)'s `RequestId` values,
+    one per segment sent.
+    For example, the `RequestId` `Req_a` yields these MESSAGING-API requests:
+    `Req_a:1`, `Req_a:2`, ..., `Req_a:N`, where `Req_a:k` represents the k-th
+    MESSAGING-API segment `RequestId`.
+    That is, `Req_a` is the `RequestId` from the RELIABLE-CHANNEL-API spec PoV,
+    whereas `Req_a:k` is the `RequestId` from the MESSAGING-API spec PoV.
+    "
+
+  SegmentationConfig:
+    type: object
+    fields:
+      enableReedSolomon:
+        type: bool
+        default: false
+        description: When enabled, the message sender adds parity (redundant) segments to allow recovery in case of data segment loss. See [SEGMENTATION](./segmentation.md).
+      segmentSizeBytes:
+        type: uint
+        default: 102400  # 100 KiB
+        description: "Maximum segment size in bytes.
+        Messages larger than this value are split before SDS processing."
+      persistence:
+        type: Persistence
+        description: "Backend for persisting partial reassembly state across restarts.
+        Implementations MUST use this backend to store received segments until all segments of a message have arrived and can be reassembled.
+        Refer to [SEGMENTATION](./segmentation.md) for the full definition of what state must be persisted."
+
+  SdsConfig:
+    type: object
+    description: Scalable Data Sync config items.
+    fields:
+      persistence:
+        type: Persistence
+        description: "Backend for persisting the SDS local history. Implementations MAY support custom backends."
+      acknowledgementTimeoutMs:
+        type: uint
+        default: 5000
+        description: "Time in milliseconds to wait for acknowledgement before retransmitting."
+      maxRetransmissions:
+        type: uint
+        default: 5
+        description: "Maximum number of retransmission attempts before considering delivery failed."
+      causalHistorySize:
+        type: uint
+        default: 2
+        description: "Number of message IDs to consider in the causal history. With longer value, a stronger correctness is guaranteed but it requires higher bandwidth and memory."
+
+  RateLimitConfig:
+    type: object
+    description: Rate limiting configuration, containing RLN-specific attributes.
+    fields:
+      enabled:
+        type: bool
+        default: false
+        description: "Whether rate limiting is enforced. SHOULD be true when RLN is active."
+      epochPeriodSec:
+        type: uint
+        default: 600  # 10 minutes
+        description: "The epoch size used by the RLN relay, in milliseconds."
+
+  Encryption:
+    type: object
+    description: "Interface for a pluggable encryption mechanism.
+    When provided as a parameter to `createReliableChannel`, the API consumer MUST implement both encrypt and decrypt operations.
+    Implementations MAY use different signatures than those described below, as long as each operation accepts a byte array and returns a byte array."
+    fields:
+      encrypt:
+        type: function
+        description: "Encrypts a byte payload. Returns the encrypted payload."
+        parameters:
+          - name: content
+            type: array<byte>
+        returns:
+          type: result<array<byte>, error>
+      decrypt:
+        type: function
+        description: "Decrypts a byte payload. Returns the decrypted payload."
+        parameters:
+          - name: payload
+            type: array<byte>
+        returns:
+          type: result<array<byte>, error>
+
+  Persistence:
+    type: object
+    description: "Interface for a pluggable SDS persistence backend.
+    Implementations MUST provide all functions required to save and retrieve SDS state per channel. Implementations MUST also provide the persistence method of interest, e.g., SQLite, custom encrypted storage, etc.
+    Refer to the [SDS spec](https://lip.logos.co/ift-ts/raw/sds.html) for the full definition of what state must be persisted."
+```
+
+## Security/Privacy Considerations
+
+- This API does not provide confidentiality by default. An `Encryption` implementation MUST be supplied when confidentiality is required.
+- Segment metadata (message ID, segment index, total segments) is visible to network observers unless encrypted by the hook.
+- SDS acknowledgement messages are sent over the same content topic and are subject to the same confidentiality concerns.
+- Rate limiting compliance is required to avoid exclusion from the network by RLN-enforcing relays.
+
+## Copyright
+
+Copyright and related rights waived via [CC0](https://creativecommons.org/publicdomain/zero/1.0/).
