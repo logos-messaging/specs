@@ -126,7 +126,7 @@ The Rate Limit Manager ensures compliance with [RLN](https://lip.logos.co/messag
 
 - It tracks how many messages have been sent in the current epoch.
 - When the limit is approached, segment dispatch MUST be delayed to the next epoch.
-- The epoch size MUST match the `epochSizeMs` configured in `RateLimitConfig`.
+- The epoch size MUST match the `[epochPeriodSec](https://lip.logos.co/messaging/standards/core/17/rln-relay.html#epoch-length)` configured in `RateLimitConfig`.
 
 ### Encryption Hook
 
@@ -177,7 +177,7 @@ When a segment is received from the network, the implementation MUST process it 
 ### Rate limiting
 
 When `RateLimitConfig.enabled` is `true`, the implementation MUST space segment transmissions
-to comply with the [RLN](https://lip.logos.co/messaging/standards/core/17/rln-relay.html) epoch constraints defined in `epochSizeMs`.
+to comply with the [RLN](https://lip.logos.co/messaging/standards/core/17/rln-relay.html) epoch constraints defined in `[epochPeriodSec](https://lip.logos.co/messaging/standards/core/17/rln-relay.html#epoch-length)`.
 Segments MUST NOT be sent at a rate that would violate the RLN message rate limit for the active epoch.
 
 ### Encryption
@@ -402,9 +402,9 @@ types:
         type: bool
         default: false
         description: "Whether rate limiting is enforced. SHOULD be true when RLN is active."
-      epochSizeMs:
+      epochPeriodSec:
         type: uint
-        default: 600000  # 10 minutes
+        default: 600  # 10 minutes
         description: "The epoch size used by the RLN relay, in milliseconds."
 
   Encryption:
