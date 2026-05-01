@@ -57,7 +57,7 @@ This API addresses that gap by introducing:
 - **[SEGMENTATION](/standards/application/segmentation.md)** to handle large messages exceeding network size limits.
 - **[SDS](https://lip.logos.co/ift-ts/raw/sds.html)** to provide causal-history-based end-to-end acknowledgement and retransmission.
 - **Rate Limit Manager** to comply with [RLN](https://lip.logos.co/messaging/standards/core/17/rln-relay.html) constraints when sending segmented messages.
-- **Encryption Hook** to allow upper layers to provide a pluggable encryption mechanism. The main motivation for encryption is to protect the payload. 
+- **Encryption Hook** to allow upper layers to provide a pluggable encryption mechanism. This enables applications to provide Confidentiality and Integrity if desired. 
 
 The separation between Reliable Channels and encryption ensures the API remains agnostic to identity and key management concerns,
 which are handled by higher layers.
