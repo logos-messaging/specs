@@ -4,7 +4,10 @@ name: Reliable Channel API definition
 category: Standards Track
 status: raw
 tags: [reliability, application, api, sds, segmentation]
-editor: Logos Messaging Team
+editor: Ivan Folgueira Bande <ivansete@status.im>
+contributors:
+- Igor Sirotin <sirotin@status.im>
+- Jazz Turner-Baggs <jazz@status.im>
 ---
 
 ## Table of contents
