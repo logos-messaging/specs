@@ -135,7 +135,7 @@ The Encryption Hook provides a pluggable interface for upper layers to inject en
 - The hook is optional; when not provided, messages are sent unencrypted.
 - Encryption is applied per segment, after segmentation and SDS.
 - Decryption is applied per segment before being processed by SDS.
-- The `Encryption` interface MUST be implemented by the caller.
+- The `Encryption` interface MUST be implemented by the caller when the hook is provided.
 - The Reliable Channel API MUST NOT impose any specific encryption scheme.
 
 ## Procedures
