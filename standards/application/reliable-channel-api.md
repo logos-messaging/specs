@@ -100,6 +100,8 @@ A custom Interface Definition Language (IDL) in YAML is used, consistent with [M
 
 ### Segmentation
 
+A protocol that splits message payloads into smaller units during transmission and reassembles them upon reception. The component is instantiated by supplying the appropriate value to SegmentationConfig.
+
 See [SEGMENTATION](./segmentation.md).
 
 ### Scalable Data Sync (SDS)
