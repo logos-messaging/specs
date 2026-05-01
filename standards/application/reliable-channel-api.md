@@ -330,6 +330,7 @@ types:
   MessageDeliveryErrorEvent:
     type: object
     description: "Event emitted when end-to-end delivery could not be confirmed.
+    The message reached the network and there's no need to explicit re-send.
     Fired after `maxRetransmissions` attempts have been exhausted without receiving an SDS acknowledgement from the recipient."
     fields:
       requestId:
