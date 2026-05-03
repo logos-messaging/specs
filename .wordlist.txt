@@ -29,6 +29,7 @@ closeChannel
 config
 ConnectionStatus
 ConnectionStatusEvent
+ContentFrame
 contentTopic
 contentTopics
 createNode
@@ -131,6 +132,7 @@ MessageSentEvent
 MessageValidation
 MiB
 multiaddr
+namespace
 NetworkConfig
 NetworkingConfig
 nim
@@ -151,11 +153,13 @@ PascalCase
 Pax
 plaintext
 PoV
+permissionless
 pluggable
 Prathi
 pre
 Prem
 ProtocolsConfig
+protobuf
 pubsub
 rateLimitConfig
 Req
