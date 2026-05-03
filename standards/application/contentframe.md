@@ -176,4 +176,4 @@ New domains are added via pull request.
 
 | domain_id | specification repository             |
 |-----------|--------------------------------------|
-| 0         | https://github.com/waku-org/specs    |
+| 1         | https://github.com/waku-org/specs    |
