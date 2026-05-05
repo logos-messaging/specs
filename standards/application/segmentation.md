@@ -96,6 +96,7 @@ To transmit a payload, the sender:
 - **MUST** split the payload into one or more **data segments**,
   each of size up to `segmentSize` bytes.
   A payload of size ≤ `segmentSize` produces a single data segment (`data_segment_count == 1`).
+- **MUST** pad the last segment to `segmentSize` for Reed-Solomon erasure coding (only if Reed-Solomon coding is enabled)
 - **MAY** use Reed–Solomon erasure coding at the predefined parity rate.
 - **MUST** encode every segment as a `SegmentMessageProto` with:
   - The `entire_message_hash`
@@ -122,7 +123,6 @@ Upon receiving a segmented message, the receiver:
   the message **MUST** be discarded and logged as invalid.
 - Once verified,
   the reconstructed payload **SHALL** be delivered to the application.
-- Incomplete reconstructions **SHOULD** be garbage-collected after a timeout.
 
 ---
 
@@ -131,7 +131,6 @@ Upon receiving a segmented message, the receiver:
 ### Reed–Solomon
 
 Implementations that apply parity **SHALL** use fixed-size shards of length `segmentSize`.
-The last data chunk **MUST** be padded to `segmentSize` for encoding.
 The reference implementation uses **nim-leopard** (Leopard-RS) with a maximum of **256 total shards**.
 
 ### Storage / Persistence
