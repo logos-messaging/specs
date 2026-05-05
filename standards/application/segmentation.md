@@ -3,7 +3,7 @@ title: Message Segmentation and Reconstruction
 name: Message Segmentation and Reconstruction
 tags: [segmentation]
 version: 0.1
-status: draft
+status: raw
 ---
 
 ## Abstract
@@ -135,7 +135,7 @@ The reference implementation uses **nim-leopard** (Leopard-RS) with a maximum of
 
 ### Storage / Persistence
 
-Segments **MAY** be persisted (e.g., SQLite) and indexed by `entire_message_hash` and by sender. Sender MAY be authenticated, this is out of scope of this spec.
+Segments may be persisted (e.g., SQLite) and indexed by `entire_message_hash` and by sender. Sender may be authenticated, this is out of scope of this spec.
 Implementations **SHOULD** support:
 
 - Duplicate detection and idempotent saves
@@ -157,12 +157,6 @@ With the predefined parity rate, reconstruction is possible if **all data segmen
 
 **API simplicity:**
 Libraries **SHOULD** require only `segmentSize` from the application for normal operation.
-
-### Support
-
-- **Language / Package:** Nim;
-  **Nimble** package manager
-- **Intended for:** application-layer use over any transport with message-size constraints
 
 ---
 
@@ -195,10 +189,6 @@ To mitigate resource exhaustion:
 - Validate segment counts (≤ 256)
 - Consider rate-limiting at the transport layer (for example, via [17/WAKU2-RLN-RELAY](https://rfc.vac.dev/waku/standards/core/17/rln-relay) on Waku)
 
-### Compatibility
-
-Nodes that do **not** implement this specification cannot reconstruct any messages.
-
 ---
 
 ## Deployment Considerations
@@ -208,10 +198,14 @@ Nodes that do **not** implement this specification cannot reconstruct any messag
 - Bandwidth overhead ≈ the predefined parity rate from parity (if enabled)
 - Additional per-segment overhead ≤ **100 bytes** (protobuf + metadata)
 
-**Network impact:**
+**Network impact:**Ac
 
 - Larger messages increase transport traffic and storage;
   operators **SHOULD** consider policy limits
+
+**Compatibility:**
+
+- Nodes that do **not** implement this specification cannot reconstruct any messages.
 
 ---
 
