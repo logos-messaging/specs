@@ -102,7 +102,7 @@ How these are transferred is out of scope for this protocol.
 
 ## Recipient Key Identifier  
 When receiving a payload it is initially unclear which Recipients ephemeral key was used by the sender in the noise handshake. 
-The Recipient sends their ephemeral key out of band, and there may exist many such keys. The recipient could exhaustively attempt decryption with it's available keys however this is potentially inefficient. Additionally in the case of decryption failure, its ambiguious whether the ephemeral keys was never valid or has expired/consumed.
+The Recipient sends their ephemeral key out of band, and there may exist many such keys. The recipient could exhaustively attempt decryption with its available keys however this is potentially inefficient. Additionally in the case of decryption failure, its ambiguious whether the ephemeral keys was never valid or has expired/consumed.
 
 To make this efficient, the Sender includes a short identifier for the key.
 
