@@ -22,7 +22,7 @@ However it is up to developers to solve 2 outstanding problems:
 
 Existing solutions fall into two categories based on how messages are delivered to clients.
 
-Centrally routed solutions require the sender's identity in order to deliver messages to their intended destination. Clients in these systems only receive their share of the traffic, which is trivial for them to attempt decryption on every message. These applications avoid the issue entirely, by forfeiting some degree of recipient/conversation privacy. 
+Centrally routed solutions require the recipient's identity in order to deliver messages to their intended destination. Clients in these systems only receive their share of the traffic, which is trivial for them to attempt decryption on every message. These applications avoid the issue entirely, by forfeiting some degree of recipient/conversation privacy. 
 
 Peer-to-peer broadcast routed solutions which maintain recipient privacy also sacrifice performance. Approaches include attempting decryption on all messages received to determine if this payload is of interest. Dividing the broadcast domains into discrete bins can help reduce the processing load, however only to a point. Each broadcast bin must maintain enough traffic to maintain k-anonymity, else the solution matches the centralized approach.   
 
