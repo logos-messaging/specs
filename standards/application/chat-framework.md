@@ -16,12 +16,11 @@ This specification defines a modular communication protocol framework for descri
 
 Chat protocols specifications can be long and dense documents. To fully describe a chat protocol there are many layers and operations which are required to be documented. This includes payloads, message transport, encryption as well as user level features such as account registration, typing indicators, content formatting.
 
-With the vast amount of information required to maintain compatibility between applications - protocol documentation is either comprehensive which leads to large monolithic specifications or lacking the required details for interop between implementors.
+With the vast amount of information required to maintain compatibility between applications - protocol documentation is either comprehensive which leads to large monolithic specifications or lacking the required details for interop between implementors. A suitable solution would provide both the specificity while also remaining lean and focused.
 
 # Theory / Semantics
 
 This specification defines an abstract framework for building a chat protocol. Its purpose is to name the components, and define modular boundaries between components to promote reuse. The end result is that a chat protocol implementation can be described by listing its approach to 5 problem areas.
-
 
 The chat protocol is decomposed into 3 distinct phases.
 
@@ -34,7 +33,8 @@ and transport details are divided into:
 - **Delivery Service:** How are payloads routed and delivered to a client.
 - **Framing Strategy:** How are payloads encoded.
 
-Defining these 5 parameters allows for chat protocol implementations to be fully defined, which allows clients from different applications to exchange messages.
+Defining these 5 parameters allows for chat protocol implementations to be fully defined, which allows clients from different applications to exchange messages. 
+While also dividing documents by their focus area.
 
 ## Abstract Transport
 
