@@ -1,10 +1,10 @@
 ---
 title: WAKU-MIX
 name: Waku Mix
-editor: Prem Chaitanya Prathi <premprathi@proton.me>
+editor: Prem Chaitanya Prathi <prem@status.im>
 contributors:
- - Akshaya Mani <akshaya@status.im>
- - Hanno Cornelius <hanno@status.im>
+  - Akshaya Mani <akshaya@status.im>
+  - Hanno Cornelius <hanno@status.im>
 ---
 
 ## Tags
@@ -12,7 +12,8 @@ contributors:
 `waku/core-protocol`
 
 # Abstract
-The document describes [libp2p mix](https://rfc.vac.dev/vac/raw/mix/) integration into waku.
+
+The document describes [libp2p mix](https://lip.logos.co/ift-ts/raw/mix.html) integration into waku.
 This integration provides higher anonymity for users publishing or querying for messages to/from the Waku network.
 
 This document covers integration of mix with [lightpush](https://rfc.vac.dev/waku/standards/core/19/lightpush) and [store](https://rfc.vac.dev/waku/standards/core/13/store) protocols.
@@ -38,6 +39,7 @@ This network of mix nodes SHALL relay mix messages anonymously to the recepient.
 Anonymity of [Filter](https://rfc.vac.dev/waku/standards/core/12/filter) users is not addressed by this document.
 
 ## Terminology
+
 The key words “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL NOT”, “SHOULD”, “SHOULD NOT”,
 “RECOMMENDED”, “MAY”, and “OPTIONAL” in this document are to be interpreted as described in [RFC2119](https://www.ietf.org/rfc/rfc2119.txt).
 
@@ -79,15 +81,18 @@ Resource-restricted/Edge nodes with short connection windows MUST _only_ act as 
 
 Each waku node that supports the `mix intermediary or exit role` SHOULD indicate the same in its discoverable [ENR](https://github.com/waku-org/specs/blob/master/standards/core/enr.md).
 The following fields MUST be set as part of the discoverable ENR of a mix waku node:
+
 - The `bit 5` in the [waku2 ENR key](https://github.com/waku-org/specs/blob/master/standards/core/enr.md#waku2-enr-key) is reserved to indicate `mix` support. This bit MUST be set to true to indicate `mix` support.
 - A new field `mix-key` SHOULD be set to the `ed25519 public key` which is used for sphinx encryption.
 
-Adding these fields to the ENR may cause the ENR size to cross the 300 byte limit especially in case a node supports multiple transports. 
+Adding these fields to the ENR may cause the ENR size to cross the 300 byte limit especially in case a node supports multiple transports.
 This limitation will have to be addressed in future.
+
 ### Discovery
 
 Mix protocol provides better anonymity when a sender node has a sufficiently large pool of mix nodes to do path selection.
 This moves the problem into discovery domain and requires the following from discovery mechanisms:
+
 1. It is important for nodes to be able to discover as many nodes as possible quickly. This becomes especially important for edge nodes that come online just to publish/query messages for a short period of time.
 2. The discovery mechanism MUST be unbiased and not biased toward specific subsets (e.g., nodes that are topologically closer).
 3. It is important to have the most recent online status of the nodes so that mix paths that are selected are not broken which lead to reliability issues.
@@ -101,15 +106,16 @@ Mix protocol in waku network SHOULD have `rate-limiting/spam` protection to hand
 
 1. Any node can generate a mix packet and publish into the mix network. Hence there needs to be some validation as to who is allowed to publish and whether the user is within allowed rate-limits.
 2. Any node can intentionally generate paths which are broken and send messages into the mix network.
-3. An attacker can spawn a huge number of mix nodes so that user behaviour is observed in order to determine traffic patterns and deanonymize users. 
+3. An attacker can spawn a huge number of mix nodes so that user behaviour is observed in order to determine traffic patterns and deanonymize users.
 
-There is a need to enforce rate-limits and spam protect the mix network. 
+There is a need to enforce rate-limits and spam protect the mix network.
 The rate-limiting and spam protection shall be addressed as part of future work.
 
 ## Tradeoffs
 
 Using `mix` protocol for publishing and querying messages adds certain overhead which is primarily the delay in delivering message to the destination.
 The overall additional delay `D` depends on the following params:
+
 - path length `L`
 - delay added by each intermediary node `dm`
 - connection establishment time `dc`
@@ -129,8 +135,9 @@ Copyright and related rights waived via
 [CC0](https://creativecommons.org/publicdomain/zero/1.0/).
 
 ## References
- - [libp2p mix](https://rfc.vac.dev/vac/raw/mix/)
- - [waku lightpush](https://rfc.vac.dev/waku/standards/core/19/lightpush)
- - [waku relay](https://rfc.vac.dev/waku/standards/core/11/relay)
- - [ENR](https://github.com/waku-org/specs/blob/master/standards/core/enr.md)
- - [sphinx encryption](https://cypherpunks.ca/~iang/pubs/Sphinx_Oakland09.pdf)
+
+- [libp2p mix](https://lip.logos.co/ift-ts/raw/mix.html)
+- [waku lightpush](https://rfc.vac.dev/waku/standards/core/19/lightpush)
+- [waku relay](https://rfc.vac.dev/waku/standards/core/11/relay)
+- [ENR](https://github.com/waku-org/specs/blob/master/standards/core/enr.md)
+- [sphinx encryption](https://cypherpunks.ca/~iang/pubs/Sphinx_Oakland09.pdf)

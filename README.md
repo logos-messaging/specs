@@ -50,6 +50,7 @@ This repository contains specifications for the Waku suite of protocols.
 |[TOR-PUSH](standards/application/tor-push.md)| Waku Tor Push |
 |[RLN-KEYSTORE](standards/application/rln-keystore.md)| Waku RLN Keystore JSON schema |
 |[P2P-RELIABILITY](standards/application/p2p-reliability.md)| Waku P2P Reliability |
+|[WAKU-API](standards/application/waku-api.md)| Waku API |
 
 ### Informational
 
