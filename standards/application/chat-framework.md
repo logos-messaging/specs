@@ -20,15 +20,15 @@ With the vast amount of information required to maintain compatibility between a
 
 # Theory / Semantics
 
-This specification defines an abstract framework for building a chat protocol. Its purpose is to name the components, and define modular boundaries between components to promote reuse. The end result is that a chat protocol implementation can be described by listing its approach to 5 problem areas.
+This specification defines an abstract framework for building a chat protocol. Its purpose is to name the distinct components/phases, and define modular boundaries between them to promote reuse. The end result is that a chat protocol implementation can be described by listing its approach to 5 things.
 
-The chat protocol is decomposed into 3 distinct phases.
+The lifecycle of a protocol instance is divided into three phases:
 
 - **Discovery:** How does a Sender learn of other clients.
 - **Initialization:** How does a Recipient learn a client wants to communicate with them.
 - **Operation:** How do participants exchange content.
 
-and transport details are divided into:
+and transport details are divided into 2 components:
 
 - **Delivery Service:** How are payloads routed and delivered to a client.
 - **Framing Strategy:** How are payloads encoded.
@@ -59,7 +59,7 @@ In this protocol framework, payloads from multiple protocols are potentially mul
 A framing strategy should define a common payload type as well as a method to determine which state machine a receiving client must use to decode it.
 
 
-## Protocol Components
+## Protocol Phases
 
 In order to exchange content clients must be able to learn of each others existence, gather the pre-requisite information/parameters and, remain synchronized over time.
 
