@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> These specifications now live at [logos-co/logos-lips/](https://github.com/logos-co/logos-lips/)
+ 
 # Waku Specifications
 
 Waku builds a family of privacy-preserving, censorship-resistant communication protocols for web3 applications.
